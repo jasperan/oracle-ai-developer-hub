@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentic RAG with langchain-oracledb — Oracle AI Developer Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+  :root {
+    --bg-deep: #0a0e1a;
+    --bg-card: #111827;
+    --bg-elevated: #1a2235;
+    --bg-surface: #1e293b;
+    --oracle-red: #C74634;
+    --oracle-red-glow: rgba(199, 70, 52, 0.3);
+    --gold: #d4a853;
+    --gold-dim: rgba(212, 168, 83, 0.15);
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --accent-blue: #3b82f6;
+    --accent-teal: #14b8a6;
+    --accent-purple: #a78bfa;
+    --border-subtle: rgba(148, 163, 184, 0.1);
+    --border-accent: rgba(199, 70, 52, 0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: 'Inter', -apple-system, sans-serif;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ── Slide System ── */
+  .slide {
+    width: 100vw;
+    min-height: 100vh;
+    display: flex;
+    position: relative;
+    overflow: hidden;
+    padding: 4rem 6rem;
+  }
+
+  .slide-number {
+    position: absolute;
+    bottom: 2rem;
+    right: 3rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+  }
+
+  /* ── Typography ── */
+  h1, h2, h3 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 700;
+    line-height: 1.15;
+  }
+
+  .slide h1 { font-size: clamp(2.5rem, 5vw, 4.5rem); }
+  .slide h2 { font-size: clamp(2rem, 3.5vw, 3rem); }
+  .slide h3 { font-size: clamp(1.25rem, 2vw, 1.75rem); color: var(--gold); }
+
+  .subtitle {
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+    letter-spacing: 0.02em;
+  }
+
+  .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--oracle-red);
+  }
+
+  code, .mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85em;
+  }
+
+  /* ── Layout Compositions ── */
+  .centered {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .left-heavy {
+    flex-direction: row;
+    align-items: center;
+    gap: 5rem;
+  }
+  .left-heavy .content-main { flex: 1.4; }
+  .left-heavy .content-side { flex: 1; }
+
+  .right-heavy {
+    flex-direction: row;
+    align-items: center;
+    gap: 5rem;
+  }
+  .right-heavy .content-side { flex: 1; }
+  .right-heavy .content-main { flex: 1.4; }
+
+  .split {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 4rem;
+  }
+  .split > * { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+
+  .full-bleed {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+  }
+
+  .edge-left {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  /* ── Cards & Containers ── */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 2rem;
+    transition: border-color 0.3s;
+  }
+  .card:hover { border-color: var(--border-accent); }
+
+  .card-grid {
+    display: grid;
+    gap: 1.5rem;
+  }
+  .card-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .card-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .card-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+  .badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 100px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .badge-red { background: rgba(199,70,52,0.15); color: var(--oracle-red); border: 1px solid rgba(199,70,52,0.3); }
+  .badge-gold { background: var(--gold-dim); color: var(--gold); border: 1px solid rgba(212,168,83,0.3); }
+  .badge-blue { background: rgba(59,130,246,0.1); color: var(--accent-blue); border: 1px solid rgba(59,130,246,0.25); }
+  .badge-teal { background: rgba(20,184,166,0.1); color: var(--accent-teal); border: 1px solid rgba(20,184,166,0.25); }
+  .badge-purple { background: rgba(167,139,250,0.1); color: var(--accent-purple); border: 1px solid rgba(167,139,250,0.25); }
+
+  .divider {
+    width: 60px;
+    height: 3px;
+    background: var(--oracle-red);
+    border-radius: 2px;
+    margin: 1.5rem 0;
+  }
+
+  .code-block {
+    background: #0d1117;
+    border: 1px solid rgba(148,163,184,0.08);
+    border-radius: 8px;
+    padding: 1.25rem 1.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    line-height: 1.7;
+    color: #e2e8f0;
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .code-block .kw { color: #ff7b72; }
+  .code-block .str { color: #a5d6ff; }
+  .code-block .fn { color: #d2a8ff; }
+  .code-block .cm { color: #8b949e; }
+  .code-block .num { color: #79c0ff; }
+
+  /* ── Mermaid ── */
+  .mermaid-container {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+    min-height: 300px;
+  }
+  .mermaid { width: 100%; }
+  .mermaid svg { width: 100% !important; height: auto !important; max-height: 500px; }
+
+  /* ── SVG Accents ── */
+  .accent-corner {
+    position: absolute;
+    pointer-events: none;
+  }
+
+  .accent-dots {
+    position: absolute;
+    opacity: 0.06;
+    pointer-events: none;
+  }
+
+  /* ── Stat Block ── */
+  .stat {
+    text-align: center;
+    padding: 1rem;
+  }
+  .stat-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* ── Sparkline ── */
+  .sparkline { display: inline-block; vertical-align: middle; }
+
+  /* ── Progress Bar ── */
+  .progress-bar {
+    height: 6px;
+    background: rgba(148,163,184,0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+  }
+  .progress-bar .fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s ease;
+  }
+
+  /* ── Flow Steps ── */
+  .flow-steps {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .flow-step {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .flow-arrow {
+    color: var(--text-muted);
+    font-size: 1.2rem;
+  }
+
+  /* ── List styles ── */
+  .feature-list {
+    list-style: none;
+    padding: 0;
+  }
+  .feature-list li {
+    padding: 0.6rem 0;
+    padding-left: 1.5rem;
+    position: relative;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+  }
+  .feature-list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--oracle-red);
+  }
+
+  /* ── Backgrounds ── */
+  .bg-gradient-oracle {
+    background: linear-gradient(135deg, #0a0e1a 0%, #1a0a0a 50%, #0a0e1a 100%);
+  }
+  .bg-gradient-gold {
+    background: linear-gradient(135deg, #0a0e1a 0%, #1a1508 50%, #0a0e1a 100%);
+  }
+  .bg-gradient-cool {
+    background: linear-gradient(135deg, #0a0e1a 0%, #0a1a2e 50%, #0a0e1a 100%);
+  }
+
+  /* ── Table ── */
+  .clean-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  .clean-table th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid var(--oracle-red);
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .clean-table td {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+  }
+  .clean-table tr:hover td {
+    color: var(--text-primary);
+    background: rgba(199,70,52,0.03);
+  }
+
+  /* ── Animations ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulseGlow {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.8; }
+  }
+
+  .slide > * {
+    animation: fadeUp 0.6s ease-out both;
+  }
+
+  /* ── Print / Presentation ── */
+  @media print {
+    .slide { page-break-after: always; height: 100vh; }
+  }
+
+  /* ── Navigation ── */
+  .nav-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 2rem;
+    background: rgba(10, 14, 26, 0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 0.8rem;
+  }
+  .nav-bar .nav-title {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+  .nav-bar .nav-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  .nav-bar button {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s;
+  }
+  .nav-bar button:hover {
+    border-color: var(--oracle-red);
+    color: var(--text-primary);
+  }
+  .nav-bar .slide-counter {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-muted);
+    min-width: 4rem;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════
+     NAVIGATION
+     ══════════════════════════════════════════════════════════════ -->
+<nav class="nav-bar">
+  <span class="nav-title">Agentic RAG &mdash; langchain-oracledb</span>
+  <div class="nav-controls">
+    <button onclick="prevSlide()" title="Previous">&#9664; Prev</button>
+    <span class="slide-counter" id="slideCounter">1 / 12</span>
+    <button onclick="nextSlide()" title="Next">Next &#9654;</button>
+    <button onclick="toggleView()" id="viewToggle" title="Toggle scroll/slide view">Scroll View</button>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 1 — TITLE (centered, full-bleed with gradient)
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide centered bg-gradient-oracle" id="slide-1" style="padding-top:6rem;">
+  <!-- Decorative SVG grid -->
+  <svg class="accent-dots" style="top:0;left:0;width:100%;height:100%;" viewBox="0 0 800 600">
+    <defs>
+      <pattern id="dots" width="40" height="40" patternUnits="userSpaceOnUse">
+        <circle cx="2" cy="2" r="1" fill="#C74634"/>
+      </pattern>
+    </defs>
+    <rect width="800" height="600" fill="url(#dots)"/>
+  </svg>
+
+  <div style="position:relative;z-index:1;max-width:900px;">
+    <div class="label" style="margin-bottom:1.5rem;">Oracle AI Developer Hub</div>
+
+    <!-- Oracle logo accent -->
+    <svg width="80" height="80" viewBox="0 0 80 80" style="margin-bottom:2rem;">
+      <circle cx="40" cy="40" r="36" fill="none" stroke="#C74634" stroke-width="2.5" opacity="0.6"/>
+      <circle cx="40" cy="40" r="24" fill="none" stroke="#C74634" stroke-width="1.5" opacity="0.3"/>
+      <circle cx="40" cy="40" r="8" fill="#C74634" opacity="0.8"/>
+    </svg>
+
+    <h1 style="margin-bottom:1.5rem;">Agentic RAG with<br><span style="color:var(--oracle-red);">langchain-oracledb</span></h1>
+    <p class="subtitle" style="max-width:650px;margin:0 auto 2.5rem;">
+      Multi-agent retrieval augmented generation powered by Oracle AI Database,
+      local LLMs via Ollama, and the A2A protocol
+    </p>
+
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+      <span class="badge badge-red">Oracle AI Vector Search</span>
+      <span class="badge badge-gold">Chain of Thought</span>
+      <span class="badge badge-blue">A2A Protocol</span>
+      <span class="badge badge-teal">Local LLM Inference</span>
+    </div>
+  </div>
+
+  <span class="slide-number">01 / 12</span>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 2 — THE PROBLEM (left-heavy)
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide left-heavy" id="slide-2">
+  <div class="content-main">
+    <div class="label">The Challenge</div>
+    <div class="divider"></div>
+    <h2>Traditional RAG<br>Falls Short</h2>
+    <p style="color:var(--text-secondary);margin:1.5rem 0;font-size:1.05rem;max-width:520px;">
+      Simple vector similarity search retrieves text chunks — but it doesn't
+      <em>reason</em>. Complex questions need planning, multi-step research,
+      and synthesis across heterogeneous knowledge sources.
+    </p>
+    <ul class="feature-list" style="margin-top:1.5rem;">
+      <li>Single-hop retrieval misses multi-step reasoning chains</li>
+      <li>No awareness of document type — PDFs, code, and web pages are treated identically</li>
+      <li>Context window limits force lossy truncation</li>
+      <li>No audit trail or explainability of the retrieval process</li>
+    </ul>
+  </div>
+  <div class="content-side">
+    <div class="card" style="border-left:3px solid var(--oracle-red);">
+      <h3 style="font-size:1.1rem;margin-bottom:1.25rem;">Traditional RAG</h3>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text-muted);line-height:2;">
+        Query → Embed → Top-K → Concatenate → Generate<br>
+        <span style="color:var(--oracle-red);">✗</span> No planning<br>
+        <span style="color:var(--oracle-red);">✗</span> No reasoning<br>
+        <span style="color:var(--oracle-red);">✗</span> No synthesis<br>
+        <span style="color:var(--oracle-red);">✗</span> No source routing
+      </div>
+      <div style="height:1px;background:var(--border-subtle);margin:1.25rem 0;"></div>
+      <h3 style="font-size:1.1rem;margin-bottom:1.25rem;">Agentic RAG</h3>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text-muted);line-height:2;">
+        Query → Plan → Research → Reason → Synthesize<br>
+        <span style="color:var(--accent-teal);">✓</span> Multi-step planning<br>
+        <span style="color:var(--accent-teal);">✓</span> Deep reasoning<br>
+        <span style="color:var(--accent-teal);">✓</span> Cross-source synthesis<br>
+        <span style="color:var(--accent-teal);">✓</span> Intelligent routing
+      </div>
+    </div>
+  </div>
+  <span class="slide-number">02 / 12</span>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 3 — ARCHITECTURE OVERVIEW (full-bleed diagram)
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide full-bleed bg-gradient-cool" id="slide-3">
+  <div style="width:100%;max-width:1200px;">
+    <div style="text-align:left;margin-bottom:2rem;">
+      <div class="label">System Architecture</div>
+      <div class="divider"></div>
+      <h2>End-to-End Pipeline</h2>
+    </div>
+    <div class="mermaid-container" style="padding:2.5rem;">
+      <pre class="mermaid">
+%%{init: {'theme':'dark','themeVariables':{'primaryColor':'#C74634','primaryTextColor':'#f1f5f9','primaryBorderColor':'#C74634','lineColor':'#64748b','secondaryColor':'#1a2235','tertiaryColor':'#111827','background':'#111827','mainBkg':'#1a2235','nodeBorder':'#475569','clusterBkg':'#0d1117','clusterBorder':'#334155','titleColor':'#d4a853','edgeLabelBackground':'#111827','nodeTextColor':'#f1f5f9'}}}%%
+graph LR
+    subgraph INPUT["📄 Document Ingestion"]
+        PDF["PDF<br/>Docling"]
+        WEB["Web<br/>Trafilatura"]
+        CODE["Code<br/>Gitingest"]
+    end
+
+    subgraph ORACLE["🗄️ Oracle AI Database"]
+        SPLIT["OracleTextSplitter<br/>Normalize & Chunk"]
+        EMBED["OracleEmbeddings<br/>ALL_MINILM_L12_V2"]
+        VS["OracleVS<br/>Vector Store"]
+        EVENTS["Event Logger<br/>6 Event Tables"]
+    end
+
+    subgraph AGENTS["🤖 Agent Chain of Thought"]
+        PLAN["Planner"]
+        RES["Researcher"]
+        REA["Reasoner"]
+        SYN["Synthesizer"]
+    end
+
+    subgraph UI["💬 Interfaces"]
+        GRAD["Gradio"]
+        OWUI["Open WebUI"]
+        API["FastAPI"]
+        CLI["CLI"]
+    end
+
+    PDF --> SPLIT
+    WEB --> SPLIT
+    CODE --> SPLIT
+    SPLIT --> EMBED
+    EMBED --> VS
+    VS --> RES
+    PLAN --> RES
+    RES --> REA
+    REA --> SYN
+    SYN --> GRAD
+    SYN --> OWUI
+    SYN --> API
+    SYN --> CLI
+    VS --> EVENTS
+
+    style INPUT fill:#1a0a0a,stroke:#C74634,stroke-width:2px
+    style ORACLE fill:#0d1117,stroke:#d4a853,stroke-width:2px
+    style AGENTS fill:#0a1a2e,stroke:#3b82f6,stroke-width:2px
+    style UI fill:#0a1a0a,stroke:#14b8a6,stroke-width:2px
+      </pre>
+    </div>
+  </div>
+  <span class="slide-number">03 / 12</span>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 4 — LANGCHAIN-ORACLEDB DEEP DIVE (right-heavy)
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide right-heavy" id="slide-4">
+  <div class="content-side">
+    <div class="mermaid-container">
+      <pre class="mermaid">
+%%{init: {'theme':'dark','themeVariables':{'primaryColor':'#C74634','primaryTextColor':'#f1f5f9','lineColor':'#64748b','secondaryColor':'#1a2235','tertiaryColor':'#111827','background':'#111827','mainBkg':'#1a2235','nodeTextColor':'#f1f5f9'}}}%%
+graph TB
+    LCO["langchain-oracledb"]
+    LCO --> OVS["OracleVS<br/>Vector Store"]
+    LCO --> OEM["OracleEmbeddings<br/>In-DB Embeddings"]
+    LCO --> OTS["OracleTextSplitter<br/>Server-side Chunking"]
+    OVS --> SIM["Similarity Search"]
+    OVS --> META["Metadata Filtering"]
+    OEM --> MODEL["ALL_MINILM_L12_V2"]
+    OTS --> NORM["Text Normalization"]
+
+    style LCO fill:#C74634,stroke:#C74634,color:#fff
+    style OVS fill:#1a2235,stroke:#d4a853
+    style OEM fill:#1a2235,stroke:#d4a853
+    style OTS fill:#1a2235,stroke:#d4a853
+      </pre>
+    </div>
+  </div>
+  <div class="content-main">
+    <div class="label">Core Integration</div>
+    <div class="divider"></div>
+    <h2>langchain-oracledb</h2>
+    <p style="color:var(--text-secondary);margin:1.25rem 0;">
+      Three LangChain components that bring Oracle AI Database's native vector
+      operations into the RAG pipeline — embedding generation, text splitting,
+      and similarity search all execute <strong style="color:var(--gold);">server-side</strong>.
+    </p>
+
+    <div class="code-block" style="margin-top:1.5rem;"><span class="cm"># Configuration in config.yaml</span>
+<span class="kw">ORACLE_EMBEDDINGS_PARAMS</span>:
+  <span class="str">provider</span>: <span class="str">"database"</span>
+  <span class="str">model</span>: <span class="str">"ALL_MINILM_L12_V2"</span>
+
+<span class="cm"># In-database embedding — no external API calls</span>
+embeddings = <span class="fn">OracleEmbeddings</span>(
+    conn=connection,
+    params={<span class="str">"provider"</span>: <span class="str">"database"</span>,
+            <span class="str">"model"</span>: <span class="str">"ALL_MINILM_L12_V2"</span>}
+)
+
+<span class="cm"># Server-side text normalization & chunking</span>
+splitter = <span class="fn">OracleTextSplitter</span>(
+    conn=connection,
+    params={<span class="str">"normalize"</span>: <span class="str">"all"</span>}
+)</div>
+  </div>
+  <span class="slide-number">04 / 12</span>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 5 — MULTI-COLLECTION VECTOR STORE (centered, cards)
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide centered bg-gradient-gold" id="slide-5" style="gap:2.5rem;">
+  <div style="max-width:1100px;width:100%;">
+    <div class="label">Vector Storage</div>
+    <div class="divider" style="margin:1rem auto;"></div>
+    <h2 style="margin-bottom:0.75rem;">Four Specialized Collections</h2>
+    <p class="subtitle" style="max-width:600px;margin:0 auto 2.5rem;">
+      Each content type gets its own vector space — enabling targeted retrieval
+      and collection-specific metadata enrichment.
+    </p>
+
+    <div class="card-grid cols-4" style="text-align:left;">
+      <div class="card" style="border-top:3px solid var(--oracle-red);">
+        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem;">
+          <svg width="32" height="32" viewBox="0 0 32 32"><rect x="4" y="2" width="24" height="28" rx="2" fill="none" stroke="#C74634" stroke-width="2"/><line x1="9" y1="9" x2="23" y2="9" stroke="#C74634" stroke-width="1.5" opacity="0.5"/><line x1="9" y1="14" x2="20" y2="14" stroke="#C74634" stroke-width="1.5" opacity="0.5"/><line x1="9" y1="19" x2="22" y2="19" stroke="#C74634" stroke-width="1.5" opacity="0.5"/></svg>
+          <h3 style="font-size:1rem;">PDF</h3>
+        </div>
+        <span class="badge badge-red" style="margin-bottom:0.75rem;">PDFCOLLECTION</span>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.5rem;">
+          Docling extraction &rarr; Markdown export &rarr; Server-side chunking &rarr; Document ID tracking
+        </p>
+      </div>
+
+      <div class="card" style="border-top:3px solid var(--accent-blue);">
+        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem;">
+          <svg width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="none" stroke="#3b82f6" stroke-width="2"/><path d="M10 16 L14 20 L22 12" fill="none" stroke="#3b82f6" stroke-width="2"/></svg>
+          <h3 style="font-size:1rem;color:var(--accent-blue);">Web</h3>
+        </div>
+        <span class="badge badge-blue" style="margin-bottom:0.75rem;">WEBCOLLECTION</span>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.5rem;">
+          Trafilatura extraction &rarr; Rich metadata (author, date, tags) &rarr; Special URL handling
+        </p>
+      </div>
+
+      <div class="card" style="border-top:3px solid var(--accent-purple);">
+        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem;">
+          <svg width="32" height="32" viewBox="0 0 32 32"><rect x="4" y="6" width="24" height="20" rx="3" fill="none" stroke="#a78bfa" stroke-width="2"/><text x="9" y="20" fill="#a78bfa" font-family="monospace" font-size="10">&lt;/&gt;</text></svg>
+          <h3 style="font-size:1rem;color:var(--accent-purple);">Repository</h3>
+        </div>
+        <span class="badge badge-purple" style="margin-bottom:0.75rem;">REPOCOLLECTION</span>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.5rem;">
+          Gitingest extraction &rarr; Code structure preservation &rarr; File-level metadata
+        </p>
+      </div>
+
+      <div class="card" style="border-top:3px solid var(--accent-teal);">
+        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem;">
+          <svg width="32" height="32" viewBox="0 0 32 32"><path d="M16 4 L28 12 L28 24 L16 32 L4 24 L4 12 Z" fill="none" stroke="#14b8a6" stroke-width="2"/><circle cx="16" cy="18" r="4" fill="none" stroke="#14b8a6" stroke-width="1.5"/></svg>
+          <h3 style="font-size:1rem;color:var(--accent-teal);">General</h3>
+        </div>
+        <span class="badge badge-teal" style="margin-bottom:0.75rem;">GENERALCOLLECTION</span>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.5rem;">
+          General knowledge base &rarr; Cross-domain queries &rarr; Fallback collection
+        </p>
+      </div>
+    </div>
+  </div>
+  <span class="slide-number">05 / 12</span>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 6 — MULTI-AGENT CoT (split)
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide split" id="slide-6">
+  <div>
+    <div class="label">Chain of Thought</div>
+    <div class="divider"></div>
+    <h2>Four Specialized<br>Agents</h2>
+    <p style="color:var(--text-secondary);margin:1.25rem 0;font-size:0.95rem;">
+      Instead of a monolithic LLM call, the system decomposes reasoning into
+      four distinct roles — each agent focuses on what it does best.
+    </p>
+
+    <div style="display:flex;flex-direction:column;gap:1rem;margin-top:2rem;">
+      <div style="display:flex;align-items:center;gap:1rem;">
+        <div style="width:44px;height:44px;border-radius:10px;background:rgba(199,70,52,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="20" height="20" viewBox="0 0 20 20"><path d="M3 3h14v3H3zm0 5h10v3H3zm0 5h12v3H3z" fill="#C74634" opacity="0.8"/></svg>
+        </div>
+        <div>
+          <strong style="color:var(--oracle-red);">Planner</strong>
+          <span style="color:var(--text-muted);font-size:0.85rem;display:block;">Decomposes query into 3-4 actionable steps</span>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:1rem;">
+        <div style="width:44px;height:44px;border-radius:10px;background:rgba(59,130,246,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="8" r="5" fill="none" stroke="#3b82f6" stroke-width="1.5"/><path d="M7 16h6M10 13v3" stroke="#3b82f6" stroke-width="1.5"/></svg>
+        </div>
+        <div>
+          <strong style="color:var(--accent-blue);">Researcher</strong>
+          <span style="color:var(--text-muted);font-size:0.85rem;display:block;">Queries vector collections per step, gathers context</span>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:1rem;">
+        <div style="width:44px;height:44px;border-radius:10px;background:rgba(167,139,250,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="20" height="20" viewBox="0 0 20 20"><path d="M4 10l4 4 8-8" fill="none" stroke="#a78bfa" stroke-width="2"/></svg>
+        </div>
+        <div>
+          <strong style="color:var(--accent-purple);">Reasoner</strong>
+          <span style="color:var(--text-muted);font-size:0.85rem;display:block;">Applies logical analysis to each research finding</span>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:1rem;">
+        <div style="width:44px;height:44px;border-radius:10px;background:rgba(20,184,166,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="20" height="20" viewBox="0 0 20 20"><path d="M3 5h14M3 10h14M3 15h14" stroke="#14b8a6" stroke-width="1.5"/><circle cx="16" cy="10" r="3" fill="#14b8a6" opacity="0.5"/></svg>
+        </div>
+        <div>
+          <strong style="color:var(--accent-teal);">Synthesizer</strong>
+          <span style="color:var(--text-muted);font-size:0.85rem;display:block;">Combines all reasoning into a coherent final answer</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="mermaid-container">
+      <pre class="mermaid">
+%%{init: {'theme':'dark','themeVariables':{'primaryColor':'#C74634','primaryTextColor':'#f1f5f9','lineColor':'#64748b','secondaryColor':'#1a2235','tertiaryColor':'#111827','background':'#111827','mainBkg':'#1a2235','nodeTextColor':'#f1f5f9'}}}%%
+graph TB
+    Q["🔍 User Query"]
+    P["🗺️ Planner<br/>3-4 steps"]
+    R1["📚 Researcher<br/>Step 1"]
+    R2["📚 Researcher<br/>Step 2"]
+    R3["📚 Researcher<br/>Step 3"]
+    L1["🧠 Reasoner<br/>Analysis 1"]
+    L2["🧠 Reasoner<br/>Analysis 2"]
+    L3["🧠 Reasoner<br/>Analysis 3"]
+    S["✨ Synthesizer<br/>Final Answer"]
+
+    Q --> P
+    P --> R1
+    P --> R2
+    P --> R3
+    R1 --> L1
+    R2 --> L2
+    R3 --> L3
+    L1 --> S
+    L2 --> S
+    L3 --> S
+
+    style Q fill:#C74634,stroke:#C74634,color:#fff
+    style P fill:#1a2235,stroke:#C74634
+    style R1 fill:#1a2235,stroke:#3b82f6
+    style R2 fill:#1a2235,stroke:#3b82f6
+    style R3 fill:#1a2235,stroke:#3b82f6
+    style L1 fill:#1a2235,stroke:#a78bfa
+    style L2 fill:#1a2235,stroke:#a78bfa
+    style L3 fill:#1a2235,stroke:#a78bfa
+    style S fill:#1a2235,stroke:#14b8a6
+      </pre>
+    </div>
+  </div>
+  <span class="slide-number">06 / 12</span>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 7 — A2A PROTOCOL (edge-left, wide diagram)
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide edge-left bg-gradient-oracle" id="slide-7" style="gap:2rem;">
+  <div style="max-width:500px;">
+    <div class="label">Interoperability</div>
+    <div class="divider"></div>
+    <h2>Agent-to-Agent<br>Protocol</h2>
+    <p style="color:var(--text-secondary);margin:1rem 0;font-size:0.95rem;">
+      JSON-RPC 2.0 based protocol enabling distributed agent deployment.
+      Each agent can run on a separate server — scale independently,
+      upgrade individually.
+    </p>
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1rem;">
+      <span class="badge badge-red">document.query</span>
+      <span class="badge badge-gold">agent.discover</span>
+      <span class="badge badge-blue">task.create</span>
+      <span class="badge badge-teal">reasoning.execute</span>
+      <span class="badge badge-purple">health.check</span>
+    </div>
+  </div>
+
+  <div style="width:100%;max-width:1100px;">
+    <div class="mermaid-container">
+      <pre class="mermaid">
+%%{init: {'theme':'dark','themeVariables':{'primaryColor':'#C74634','primaryTextColor':'#f1f5f9','lineColor':'#64748b','secondaryColor':'#1a2235','tertiaryColor':'#111827','background':'#111827','mainBkg':'#1a2235','nodeTextColor':'#f1f5f9'}}}%%
+graph LR
+    USER["User<br/>Gradio / Open WebUI"]
+    ORCH["A2A Orchestrator<br/>localhost:8000"]
+    PA["Planner Agent<br/>server1:8001"]
+    RA["Researcher Agent<br/>server2:8002"]
+    REA["Reasoner Agent<br/>server3:8003"]
+    SA["Synthesizer Agent<br/>server4:8004"]
+    DB[("Oracle AI<br/>Database")]
+
+    USER -->|"POST /a2a"| ORCH
+    ORCH -->|"agent.query"| PA
+    PA -->|"plan"| ORCH
+    ORCH -->|"agent.query"| RA
+    RA -->|"findings"| ORCH
+    RA -.->|"query_pdf_collection"| DB
+    ORCH -->|"agent.query"| REA
+    REA -->|"analysis"| ORCH
+    ORCH -->|"agent.query"| SA
+    SA -->|"final answer"| ORCH
+    ORCH -->|response| USER
+
+    style USER fill:#14b8a6,stroke:#14b8a6,color:#fff
+    style ORCH fill:#C74634,stroke:#C74634,color:#fff
+    style PA fill:#1a2235,stroke:#d4a853
+    style RA fill:#1a2235,stroke:#3b82f6
+    style REA fill:#1a2235,stroke:#a78bfa
+    style SA fill:#1a2235,stroke:#14b8a6
+    style DB fill:#1a2235,stroke:#d4a853,stroke-width:2px
+      </pre>
+    </div>
+  </div>
+  <span class="slide-number">07 / 12</span>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 8 — DOCUMENT PROCESSING (split with pipeline)
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide split" id="slide-8">
+  <div>
+    <div class="label">Ingestion</div>
+    <div class="divider"></div>
+    <h2>Document<br>Processing<br>Pipeline</h2>
+    <p style="color:var(--text-secondary);margin:1.25rem 0;font-size:0.95rem;">
+      Three specialized processors handle different content types,
+      all converging into Oracle's server-side text splitting and embedding pipeline.
+    </p>
+
+    <div style="margin-top:2rem;">
+      <div class="flow-steps">
+        <span class="flow-step" style="background:rgba(199,70,52,0.15);color:var(--oracle-red);">Input</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step" style="background:rgba(212,168,83,0.12);color:var(--gold);">Extract</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step" style="background:rgba(59,130,246,0.12);color:var(--accent-blue);">Split</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step" style="background:rgba(167,139,250,0.12);color:var(--accent-purple);">Embed</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-step" style="background:rgba(20,184,166,0.12);color:var(--accent-teal);">Store</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:1.25rem;">
+    <div class="card" style="padding:1.25rem 1.5rem;">
+      <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
+        <span class="badge badge-red">PDF</span>
+        <strong style="font-size:0.9rem;">Docling + OracleTextSplitter</strong>
+      </div>
+      <div class="code-block" style="font-size:0.72rem;padding:0.75rem 1rem;">converter = <span class="fn">DocumentConverter</span>()
+result = converter.<span class="fn">convert</span>(file_path)
+text = result.document.<span class="fn">export_to_markdown</span>()
+chunks = splitter.<span class="fn">split_text</span>(text)</div>
+    </div>
+
+    <div class="card" style="padding:1.25rem 1.5rem;">
+      <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
+        <span class="badge badge-blue">Web</span>
+        <strong style="font-size:0.9rem;">Trafilatura + Metadata Extraction</strong>
+      </div>
+      <div class="code-block" style="font-size:0.72rem;padding:0.75rem 1rem;">downloaded = <span class="fn">fetch_url</span>(url)
+text = <span class="fn">extract</span>(downloaded)
+metadata = <span class="fn">extract_metadata</span>(downloaded)
+<span class="cm"># author, date, categories, tags</span></div>
+    </div>
+
+    <div class="card" style="padding:1.25rem 1.5rem;">
+      <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
+        <span class="badge badge-purple">Code</span>
+        <strong style="font-size:0.9rem;">Gitingest + Structure Preservation</strong>
+      </div>
+      <div class="code-block" style="font-size:0.72rem;padding:0.75rem 1rem;">repo = <span class="fn">gitingest</span>(repo_url)
+<span class="cm"># Preserves file structure & paths</span>
+<span class="cm"># Code-aware chunking boundaries</span></div>
+    </div>
+  </div>
+  <span class="slide-number">08 / 12</span>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 9 — REASONING STRATEGIES (centered, chart + grid)
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide centered" id="slide-9" style="gap:2rem;">
+  <div style="max-width:1100px;width:100%;">
+    <div class="label">Reasoning Ensemble</div>
+    <div class="divider" style="margin:1rem auto;"></div>
+    <h2 style="margin-bottom:0.5rem;">9 Strategies &times; 2 Modes</h2>
+    <p class="subtitle" style="margin-bottom:2.5rem;">Each strategy available in both standalone and RAG-augmented variants</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1.2fr;gap:2rem;text-align:left;">
+      <div>
+        <table class="clean-table">
+          <thead>
+            <tr>
+              <th>Strategy</th>
+              <th>Approach</th>
+              <th>RAG</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code style="color:var(--oracle-red);">standard</code></td>
+              <td>Direct response</td>
+              <td>&#10003;</td>
+            </tr>
+            <tr>
+              <td><code style="color:var(--gold);">cot</code></td>
+              <td>Step-by-step reasoning</td>
+              <td>&#10003;</td>
+            </tr>
+            <tr>
+              <td><code style="color:var(--accent-blue);">tot</code></td>
+              <td>Parallel path exploration</td>
+              <td>&#10003;</td>
+            </tr>
+            <tr>
+              <td><code style="color:var(--accent-teal);">react</code></td>
+              <td>Reasoning + Acting</td>
+              <td>&#10003;</td>
+            </tr>
+            <tr>
+              <td><code style="color:var(--accent-purple);">self_reflection</code></td>
+              <td>Iterative critique</td>
+              <td>&#10003;</td>
+            </tr>
+            <tr>
+              <td><code style="color:var(--oracle-red);">consistency</code></td>
+              <td>Multi-sample voting</td>
+              <td>&#10003;</td>
+            </tr>
+            <tr>
+              <td><code style="color:var(--gold);">decomposed</code></td>
+              <td>Sub-problem breakdown</td>
+              <td>&#10003;</td>
+            </tr>
+            <tr>
+              <td><code style="color:var(--accent-blue);">least_to_most</code></td>
+              <td>Progressive complexity</td>
+              <td>&#10003;</td>
+            </tr>
+            <tr>
+              <td><code style="color:var(--accent-teal);">recursive</code></td>
+              <td>Recursive decomposition</td>
+              <td>&#10003;</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div>
+        <div class="card" style="display:flex;flex-direction:column;justify-content:center;">
+          <h3 style="font-size:1rem;margin-bottom:1.5rem;text-align:center;">Strategy Complexity Spectrum</h3>
+          <div style="position:relative;height:280px;width:100%;">
+            <canvas id="strategyChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <span class="slide-number">09 / 12</span>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 10 — OraDBVectorStore CODE (left-heavy)
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide left-heavy bg-gradient-cool" id="slide-10">
+  <div class="content-main">
+    <div class="label">Implementation Detail</div>
+    <div class="divider"></div>
+    <h2>OraDBVectorStore</h2>
+    <p style="color:var(--text-secondary);margin:1.25rem 0;font-size:0.95rem;">
+      The bridge between the RAG agents and Oracle AI Database.
+      Manages four collection instances, sanitizes metadata, and
+      includes a monkeypatch for dual-format metadata handling.
+    </p>
+
+    <div class="code-block" style="margin-top:1.5rem;font-size:0.72rem;"><span class="kw">class</span> <span class="fn">OraDBVectorStore</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, persist_directory, embedding_function):
+        <span class="cm"># Initialize 4 OracleVS instances</span>
+        self.pdf_store = <span class="fn">OracleVS</span>(
+            client=conn, table_name=<span class="str">"PDFCOLLECTION"</span>,
+            embedding_function=oracle_emb,
+            distance_strategy=DistanceStrategy.COSINE
+        )
+        self.web_store  = <span class="fn">OracleVS</span>(...)  <span class="cm"># WEBCOLLECTION</span>
+        self.repo_store = <span class="fn">OracleVS</span>(...)  <span class="cm"># REPOCOLLECTION</span>
+        self.gen_store  = <span class="fn">OracleVS</span>(...)  <span class="cm"># GENERALCOLLECTION</span>
+
+    <span class="kw">def</span> <span class="fn">query_pdf_collection</span>(self, query, n_results=<span class="num">3</span>):
+        results = self.pdf_store.<span class="fn">similarity_search_with_score</span>(
+            query, k=n_results
+        )
+        <span class="kw">return</span> [{
+            <span class="str">"text"</span>: doc.page_content,
+            <span class="str">"similarity"</span>: <span class="num">1</span>/(<span class="num">1</span> + dist),
+            <span class="str">"metadata"</span>: doc.metadata
+        } <span class="kw">for</span> doc, dist <span class="kw">in</span> results]</div>
+  </div>
+
+  <div class="content-side" style="display:flex;flex-direction:column;gap:1.5rem;">
+    <div class="card" style="text-align:center;">
+      <div class="stat-value">4</div>
+      <div class="stat-label">Vector Store Instances</div>
+      <div class="progress-bar" style="margin-top:1rem;">
+        <div class="fill" style="width:100%;background:linear-gradient(90deg,var(--oracle-red),var(--gold));"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="font-size:0.85rem;margin-bottom:0.75rem;">API Surface</h3>
+      <ul class="feature-list" style="font-size:0.8rem;">
+        <li><code>add_pdf_chunks()</code></li>
+        <li><code>add_web_chunks()</code></li>
+        <li><code>add_repo_chunks()</code></li>
+        <li><code>query_*_collection()</code></li>
+        <li><code>get_collection_count()</code></li>
+        <li><code>delete_documents()</code></li>
+      </ul>
+    </div>
+
+    <div class="card" style="border-left:3px solid var(--gold);">
+      <h3 style="font-size:0.85rem;margin-bottom:0.5rem;color:var(--gold);">Similarity Score</h3>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text-muted);">
+        score = 1 / (1 + distance)
+      </div>
+      <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.5rem;">
+        Euclidean distance &rarr; normalized 0&ndash;1 similarity
+      </div>
+    </div>
+  </div>
+  <span class="slide-number">10 / 12</span>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 11 — INTERFACES & DEPLOYMENT (right-heavy)
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide right-heavy" id="slide-11">
+  <div class="content-side">
+    <div class="label">Deployment</div>
+    <div class="divider"></div>
+    <h2>Run<br>Anywhere</h2>
+
+    <div style="margin-top:2rem;display:flex;flex-direction:column;gap:1rem;">
+      <div class="card" style="padding:1rem 1.25rem;display:flex;align-items:center;gap:1rem;">
+        <div style="width:36px;height:36px;border-radius:8px;background:rgba(20,184,166,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <span style="font-size:1.1rem;">💻</span>
+        </div>
+        <div>
+          <strong style="font-size:0.85rem;">Local</strong>
+          <div style="font-size:0.75rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace;">python run_app.py --gradio</div>
+        </div>
+      </div>
+
+      <div class="card" style="padding:1rem 1.25rem;display:flex;align-items:center;gap:1rem;">
+        <div style="width:36px;height:36px;border-radius:8px;background:rgba(59,130,246,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <span style="font-size:1.1rem;">🐳</span>
+        </div>
+        <div>
+          <strong style="font-size:0.85rem;">Docker</strong>
+          <div style="font-size:0.75rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace;">docker run --gpus all agentic-rag</div>
+        </div>
+      </div>
+
+      <div class="card" style="padding:1rem 1.25rem;display:flex;align-items:center;gap:1rem;">
+        <div style="width:36px;height:36px;border-radius:8px;background:rgba(167,139,250,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <span style="font-size:1.1rem;">☸️</span>
+        </div>
+        <div>
+          <strong style="font-size:0.85rem;">Kubernetes</strong>
+          <div style="font-size:0.75rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace;">cd k8s && ./deploy.sh</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-main">
+    <h3 style="margin-bottom:1.5rem;">Four User Interfaces</h3>
+
+    <div class="card-grid cols-2">
+      <div class="card" style="padding:1.25rem;">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
+          <svg width="24" height="24" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="3" fill="none" stroke="var(--oracle-red)" stroke-width="1.5"/><line x1="2" y1="9" x2="22" y2="9" stroke="var(--oracle-red)" stroke-width="1" opacity="0.5"/></svg>
+          <strong style="font-size:0.85rem;">Gradio</strong>
+        </div>
+        <p style="font-size:0.75rem;color:var(--text-muted);">
+          Model management, document processing tabs, standard & CoT chat, A2A testing
+        </p>
+      </div>
+
+      <div class="card" style="padding:1.25rem;">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
+          <svg width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="var(--accent-teal)" stroke-width="1.5"/><path d="M8 12h8M12 8v8" stroke="var(--accent-teal)" stroke-width="1.5"/></svg>
+          <strong style="font-size:0.85rem;">Open WebUI</strong>
+        </div>
+        <p style="font-size:0.75rem;color:var(--text-muted);">
+          ChatGPT-like experience with 18 reasoning "models", streaming, history
+        </p>
+      </div>
+
+      <div class="card" style="padding:1.25rem;">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
+          <svg width="24" height="24" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10" stroke="var(--accent-blue)" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <strong style="font-size:0.85rem;">REST API</strong>
+        </div>
+        <p style="font-size:0.75rem;color:var(--text-muted);">
+          FastAPI with OpenAI-compatible <code>/v1/chat/completions</code> endpoint
+        </p>
+      </div>
+
+      <div class="card" style="padding:1.25rem;">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
+          <svg width="24" height="24" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="var(--accent-purple)" stroke-width="1.5"/><text x="7" y="15" fill="var(--accent-purple)" font-family="monospace" font-size="8">&gt;_</text></svg>
+          <strong style="font-size:0.85rem;">CLI</strong>
+        </div>
+        <p style="font-size:0.75rem;color:var(--text-muted);">
+          Interactive agent_cli.py for direct PDF/web processing and chat
+        </p>
+      </div>
+    </div>
+
+    <div style="margin-top:1.5rem;">
+      <h3 style="font-size:0.9rem;margin-bottom:0.75rem;">Open WebUI Functions</h3>
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+        <span class="badge badge-red">RAG Filter</span>
+        <span class="badge badge-gold">RAG Pipe (6 models)</span>
+        <span class="badge badge-blue">Document Sync</span>
+      </div>
+    </div>
+  </div>
+  <span class="slide-number">11 / 12</span>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SLIDE 12 — SUMMARY & KEY ADVANTAGES (centered, editorial)
+     ══════════════════════════════════════════════════════════════ -->
+<section class="slide centered bg-gradient-oracle" id="slide-12" style="gap:2.5rem;">
+  <!-- Decorative concentric rings -->
+  <svg style="position:absolute;right:-100px;top:-100px;opacity:0.04;" width="500" height="500" viewBox="0 0 500 500">
+    <circle cx="250" cy="250" r="240" fill="none" stroke="#C74634" stroke-width="1"/>
+    <circle cx="250" cy="250" r="200" fill="none" stroke="#C74634" stroke-width="1"/>
+    <circle cx="250" cy="250" r="160" fill="none" stroke="#C74634" stroke-width="1"/>
+    <circle cx="250" cy="250" r="120" fill="none" stroke="#C74634" stroke-width="1"/>
+  </svg>
+
+  <div style="position:relative;z-index:1;max-width:1000px;width:100%;">
+    <div class="label">Summary</div>
+    <div class="divider" style="margin:1rem auto;"></div>
+    <h2 style="margin-bottom:2.5rem;">Why This Architecture Wins</h2>
+
+    <div class="card-grid cols-3" style="text-align:left;margin-bottom:3rem;">
+      <div class="card" style="border-top:3px solid var(--oracle-red);">
+        <div class="stat-value" style="font-size:1.8rem;margin-bottom:0.5rem;">Oracle AI</div>
+        <p style="font-size:0.8rem;color:var(--text-muted);">
+          Native vector ops at database scale. In-DB embeddings — no external API calls.
+          Full event audit trail across 6 tables.
+        </p>
+      </div>
+
+      <div class="card" style="border-top:3px solid var(--gold);">
+        <div class="stat-value" style="font-size:1.8rem;margin-bottom:0.5rem;">Multi-Agent</div>
+        <p style="font-size:0.8rem;color:var(--text-muted);">
+          4 specialized agents via A2A protocol. 9 reasoning strategies &times; 2 modes.
+          Distributed deployment ready.
+        </p>
+      </div>
+
+      <div class="card" style="border-top:3px solid var(--accent-teal);">
+        <div class="stat-value" style="font-size:1.8rem;margin-bottom:0.5rem;">Privacy-First</div>
+        <p style="font-size:0.8rem;color:var(--text-muted);">
+          100% local inference with Ollama. No data leaves your infrastructure.
+          4 interfaces — choose your workflow.
+        </p>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:center;gap:3rem;margin-bottom:2.5rem;">
+      <div class="stat">
+        <div class="stat-value">4</div>
+        <div class="stat-label">Vector Collections</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">18</div>
+        <div class="stat-label">Reasoning Models</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">12</div>
+        <div class="stat-label">A2A Methods</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">6</div>
+        <div class="stat-label">Event Tables</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+      <span class="badge badge-red" style="font-size:0.8rem;padding:0.4rem 1.2rem;">langchain-oracledb</span>
+      <span class="badge badge-gold" style="font-size:0.8rem;padding:0.4rem 1.2rem;">Ollama</span>
+      <span class="badge badge-blue" style="font-size:0.8rem;padding:0.4rem 1.2rem;">FastAPI</span>
+      <span class="badge badge-purple" style="font-size:0.8rem;padding:0.4rem 1.2rem;">Gradio</span>
+      <span class="badge badge-teal" style="font-size:0.8rem;padding:0.4rem 1.2rem;">Open WebUI</span>
+    </div>
+
+    <p style="color:var(--text-muted);font-size:0.8rem;margin-top:3rem;font-family:'JetBrains Mono',monospace;">
+      github.com/oracle-devrel/oracle-ai-developer-hub &rarr; apps/agentic_rag
+    </p>
+  </div>
+  <span class="slide-number">12 / 12</span>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SCRIPTS
+     ══════════════════════════════════════════════════════════════ -->
+<script>
+  // ── Mermaid ──
+  // Don't auto-start — we render manually after all slides are visible
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'dark',
+    themeVariables: {
+      primaryColor: '#C74634',
+      primaryTextColor: '#f1f5f9',
+      lineColor: '#64748b',
+      secondaryColor: '#1a2235',
+      background: '#111827',
+      mainBkg: '#1a2235',
+      nodeTextColor: '#f1f5f9',
+      clusterBkg: '#0d1117',
+      clusterBorder: '#334155'
+    },
+    flowchart: { curve: 'basis', padding: 15 },
+    securityLevel: 'loose'
+  });
+
+  // ── Slide Navigation ──
+  let currentSlide = 1;
+  const totalSlides = 12;
+  let presentationMode = true;
+  let chartInstance = null;
+
+  function updateSlideView() {
+    if (!presentationMode) return;
+    document.querySelectorAll('.slide').forEach((s, i) => {
+      s.style.display = (i + 1 === currentSlide) ? 'flex' : 'none';
+    });
+    document.getElementById('slideCounter').textContent = `${currentSlide} / ${totalSlides}`;
+  }
+
+  function nextSlide() {
+    if (currentSlide < totalSlides) { currentSlide++; updateSlideView(); }
+  }
+
+  function prevSlide() {
+    if (currentSlide > 1) { currentSlide--; updateSlideView(); }
+  }
+
+  function toggleView() {
+    presentationMode = !presentationMode;
+    const btn = document.getElementById('viewToggle');
+    if (presentationMode) {
+      btn.textContent = 'Scroll View';
+      updateSlideView();
+    } else {
+      btn.textContent = 'Slide View';
+      document.querySelectorAll('.slide').forEach(s => s.style.display = 'flex');
+    }
+  }
+
+  // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); prevSlide(); }
+    if (e.key === 'Escape') { toggleView(); }
+  });
+
+  function initChart() {
+    const ctx = document.getElementById('strategyChart');
+    if (!ctx || chartInstance) return;
+    chartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['standard', 'cot', 'tot', 'react', 'self_refl', 'consist.', 'decomp.', 'l2m', 'recursive'],
+        datasets: [{
+          label: 'Reasoning Depth',
+          data: [1, 3, 5, 4, 4, 5, 3, 4, 5],
+          backgroundColor: [
+            'rgba(199,70,52,0.6)','rgba(212,168,83,0.6)','rgba(59,130,246,0.6)',
+            'rgba(20,184,166,0.6)','rgba(167,139,250,0.6)','rgba(199,70,52,0.6)',
+            'rgba(212,168,83,0.6)','rgba(59,130,246,0.6)','rgba(20,184,166,0.6)'
+          ],
+          borderColor: ['#C74634','#d4a853','#3b82f6','#14b8a6','#a78bfa','#C74634','#d4a853','#3b82f6','#14b8a6'],
+          borderWidth: 1,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: {
+            beginAtZero: true, max: 6,
+            grid: { color: 'rgba(148,163,184,0.08)' },
+            ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 10 }, stepSize: 1,
+              callback: v => ['','Low','','Med','','High'][v] || '' }
+          },
+          x: {
+            grid: { display: false },
+            ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 9 }, maxRotation: 45 }
+          }
+        }
+      }
+    });
+  }
+
+  // ── Boot sequence: render everything visible, THEN enter presentation mode ──
+  document.addEventListener('DOMContentLoaded', async () => {
+    // 1. Keep all slides visible so Mermaid/Chart.js can compute dimensions
+    document.querySelectorAll('.slide').forEach(s => s.style.display = 'flex');
+
+    // 2. Render Mermaid diagrams
+    await mermaid.run({ querySelector: '.mermaid' });
+
+    // 3. Render Chart.js
+    initChart();
+
+    // 4. Small delay to let paint finish, then switch to presentation mode
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        updateSlideView();
+      });
+    });
+  });
+</script>
+
+</body>
+</html>

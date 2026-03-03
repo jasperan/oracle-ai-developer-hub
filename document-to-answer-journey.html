@@ -1,0 +1,1520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>From Document to Answer — The Agentic RAG Journey</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<style>
+  /* ========================================================
+     WARM SIGNAL — Design System
+     ======================================================== */
+  :root {
+    --bg-primary: #1a1614;
+    --bg-secondary: #221e1b;
+    --bg-tertiary: #2a2522;
+    --bg-code: #1e1a17;
+    --text-primary: #f5e6d3;
+    --text-secondary: #c4b5a4;
+    --text-muted: #8a7e72;
+    --accent-amber: #e8913a;
+    --accent-orange: #d4763c;
+    --accent-terracotta: #c75b39;
+    --accent-gold: #d4a857;
+    --accent-warm-glow: rgba(232, 145, 58, 0.08);
+    --border-subtle: rgba(196, 181, 164, 0.1);
+    --border-accent: rgba(232, 145, 58, 0.25);
+    --river-gradient: linear-gradient(180deg, #e8913a 0%, #d4763c 40%, #c75b39 70%, #e8913a 100%);
+    --font-serif: 'Playfair Display', Georgia, serif;
+    --font-sans: 'Inter', -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    --content-width: 800px;
+    --stage-marker-size: 72px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html {
+    scroll-behavior: smooth;
+    font-size: 16px;
+  }
+
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-weight: 300;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background: rgba(232, 145, 58, 0.3);
+    color: var(--text-primary);
+  }
+
+  /* ========================================================
+     HEADER / HERO
+     ======================================================== */
+  .hero {
+    position: relative;
+    padding: 120px 24px 100px;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse 600px 400px at 50% 30%, rgba(232, 145, 58, 0.06), transparent);
+    pointer-events: none;
+  }
+
+  .hero-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent-amber);
+    margin-bottom: 24px;
+  }
+
+  .hero h1 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(2.2rem, 5vw, 3.6rem);
+    line-height: 1.15;
+    color: var(--text-primary);
+    max-width: 680px;
+    margin: 0 auto 28px;
+  }
+
+  .hero h1 em {
+    font-style: italic;
+    color: var(--accent-amber);
+  }
+
+  .hero-subtitle {
+    font-family: var(--font-sans);
+    font-size: 1.1rem;
+    font-weight: 300;
+    color: var(--text-secondary);
+    max-width: 520px;
+    margin: 0 auto 48px;
+    line-height: 1.7;
+  }
+
+  .hero-meta {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+
+  .hero-meta span::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent-terracotta);
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+
+  /* ========================================================
+     RIVER — The connecting flow
+     ======================================================== */
+  .river-container {
+    position: relative;
+    max-width: var(--content-width);
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .river-line {
+    position: absolute;
+    left: 59px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(180deg,
+      rgba(232, 145, 58, 0.0) 0%,
+      rgba(232, 145, 58, 0.3) 3%,
+      rgba(212, 118, 60, 0.2) 50%,
+      rgba(199, 91, 57, 0.3) 97%,
+      rgba(199, 91, 57, 0.0) 100%
+    );
+  }
+
+  .river-line::after {
+    content: '';
+    position: absolute;
+    left: -3px;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    background: linear-gradient(180deg,
+      transparent 0%,
+      rgba(232, 145, 58, 0.05) 20%,
+      rgba(232, 145, 58, 0.03) 80%,
+      transparent 100%
+    );
+    filter: blur(4px);
+  }
+
+  /* ========================================================
+     STAGE SECTIONS
+     ======================================================== */
+  .stage {
+    position: relative;
+    padding: 80px 0 60px;
+  }
+
+  .stage + .stage {
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .stage-header {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 0;
+    align-items: start;
+    margin-bottom: 48px;
+  }
+
+  .stage-number {
+    position: relative;
+    width: var(--stage-marker-size);
+    height: var(--stage-marker-size);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: 1.8rem;
+    color: var(--accent-amber);
+    z-index: 2;
+  }
+
+  .stage-number::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid var(--border-accent);
+    background: var(--bg-primary);
+  }
+
+  .stage-number span { position: relative; z-index: 1; }
+
+  .stage-number::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(232, 145, 58, 0.1), transparent 70%);
+    z-index: 0;
+  }
+
+  .stage-title-block {
+    padding-top: 8px;
+  }
+
+  .stage-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent-orange);
+    margin-bottom: 6px;
+  }
+
+  .stage-title {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    line-height: 1.2;
+    color: var(--text-primary);
+  }
+
+  .stage-body {
+    padding-left: 120px;
+  }
+
+  .stage-body p {
+    color: var(--text-secondary);
+    font-size: 0.98rem;
+    margin-bottom: 20px;
+    max-width: 640px;
+  }
+
+  .stage-body p strong {
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  /* ========================================================
+     CARDS — Processor cards, strategy grid, etc.
+     ======================================================== */
+  .processor-cards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin: 32px 0;
+  }
+
+  @media (min-width: 640px) {
+    .processor-cards { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  .proc-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 24px 20px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .proc-card:hover {
+    border-color: var(--border-accent);
+    box-shadow: 0 4px 24px rgba(232, 145, 58, 0.06);
+  }
+
+  .proc-card-icon {
+    width: 36px; height: 36px;
+    margin-bottom: 14px;
+  }
+
+  .proc-card-icon svg {
+    width: 100%; height: 100%;
+    stroke: var(--accent-amber);
+    fill: none;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .proc-card h4 {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--accent-amber);
+    margin-bottom: 8px;
+  }
+
+  .proc-card p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  .proc-card .lib-name {
+    color: var(--accent-gold);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+  }
+
+  /* ========================================================
+     CODE BLOCKS
+     ======================================================== */
+  .code-block {
+    background: var(--bg-code);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin: 24px 0;
+    overflow-x: auto;
+    position: relative;
+  }
+
+  .code-block::before {
+    content: attr(data-lang);
+    position: absolute;
+    top: 10px;
+    right: 16px;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    opacity: 0.6;
+  }
+
+  .code-block code {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    line-height: 1.7;
+    color: var(--text-secondary);
+  }
+
+  .code-block .kw { color: var(--accent-terracotta); }
+  .code-block .fn { color: var(--accent-amber); }
+  .code-block .str { color: var(--accent-gold); }
+  .code-block .cmt { color: var(--text-muted); font-style: italic; }
+  .code-block .cls { color: #d4a857; }
+  .code-block .num { color: #c9a06c; }
+  .code-block .op { color: var(--text-muted); }
+  .code-block .var { color: var(--text-primary); }
+  .code-block .dec { color: var(--accent-orange); }
+
+  /* ========================================================
+     MERMAID DIAGRAMS
+     ======================================================== */
+  .mermaid-wrapper {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 32px 20px;
+    margin: 32px 0;
+    overflow-x: auto;
+    text-align: center;
+  }
+
+  .mermaid-wrapper .mermaid {
+    display: inline-block;
+    text-align: left;
+  }
+
+  .mermaid-caption {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: 12px;
+    letter-spacing: 0.06em;
+  }
+
+  /* ========================================================
+     BEFORE / AFTER  VISUAL
+     ======================================================== */
+  .before-after {
+    display: grid;
+    grid-template-columns: 1fr 40px 1fr;
+    gap: 0;
+    align-items: stretch;
+    margin: 32px 0;
+  }
+
+  @media (max-width: 639px) {
+    .before-after {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    .before-after-arrow { display: none; }
+  }
+
+  .ba-panel {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 20px;
+  }
+
+  .ba-panel-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+
+  .ba-panel pre {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    line-height: 1.65;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .before-after-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .before-after-arrow svg {
+    width: 24px; height: 24px;
+    stroke: var(--accent-amber);
+    fill: none;
+    stroke-width: 2;
+  }
+
+  /* ========================================================
+     STRATEGY GRID
+     ======================================================== */
+  .strategy-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin: 32px 0;
+  }
+
+  .strategy-cell {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 18px 16px;
+    transition: border-color 0.3s ease, transform 0.2s ease;
+  }
+
+  .strategy-cell:hover {
+    border-color: var(--border-accent);
+    transform: translateY(-2px);
+  }
+
+  .strategy-cell-num {
+    font-family: var(--font-serif);
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--accent-amber);
+    opacity: 0.4;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .strategy-cell-name {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--accent-amber);
+    margin-bottom: 6px;
+  }
+
+  .strategy-cell-desc {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.55;
+  }
+
+  /* ========================================================
+     MINI DATA VIZ — Metric pills
+     ======================================================== */
+  .metrics-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 24px 0;
+  }
+
+  .metric-pill {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 40px;
+    padding: 10px 18px 10px 14px;
+  }
+
+  .metric-pill-value {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--accent-amber);
+  }
+
+  .metric-pill-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1.3;
+  }
+
+  /* ========================================================
+     VECTOR VISUAL
+     ======================================================== */
+  .vector-visual {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 28px 24px;
+    margin: 32px 0;
+  }
+
+  .vector-flow {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .vf-step {
+    text-align: center;
+    flex: 0 0 auto;
+  }
+
+  .vf-step-box {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 14px 18px;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    white-space: nowrap;
+  }
+
+  .vf-step-label {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    letter-spacing: 0.05em;
+  }
+
+  .vf-arrow {
+    color: var(--accent-amber);
+    font-size: 1.2rem;
+    opacity: 0.5;
+    flex: 0 0 auto;
+  }
+
+  /* ========================================================
+     COLLECTION TABLE
+     ======================================================== */
+  .collection-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 0.85rem;
+  }
+
+  .collection-table th {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .collection-table td {
+    padding: 12px 16px;
+    color: var(--text-secondary);
+    border-bottom: 1px solid rgba(196, 181, 164, 0.05);
+  }
+
+  .collection-table td:first-child {
+    font-family: var(--font-mono);
+    color: var(--accent-amber);
+    font-weight: 500;
+    font-size: 0.82rem;
+  }
+
+  .collection-table tr:hover td {
+    background: var(--accent-warm-glow);
+  }
+
+  /* ========================================================
+     PIPELINE VISUAL (Stage 6)
+     ======================================================== */
+  .pipeline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 24px 0;
+    justify-content: center;
+  }
+
+  .pipeline-node {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-accent);
+    border-radius: 6px;
+    padding: 12px 18px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--accent-amber);
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .pipeline-node small {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .pipeline-arrow {
+    color: var(--accent-terracotta);
+    font-size: 1.1rem;
+    opacity: 0.6;
+  }
+
+  /* ========================================================
+     EVENT LOG TABLE
+     ======================================================== */
+  .event-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 20px 0;
+  }
+
+  .event-tag {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    padding: 6px 12px;
+    color: var(--text-secondary);
+    letter-spacing: 0.04em;
+  }
+
+  /* ========================================================
+     DIVIDERS & UTILITY
+     ======================================================== */
+  .section-divider {
+    border: none;
+    border-top: 1px solid var(--border-subtle);
+    margin: 0;
+  }
+
+  .callout {
+    background: var(--accent-warm-glow);
+    border-left: 3px solid var(--accent-amber);
+    border-radius: 0 6px 6px 0;
+    padding: 16px 20px;
+    margin: 24px 0;
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+  }
+
+  .callout strong {
+    color: var(--accent-amber);
+    font-weight: 500;
+  }
+
+  .inline-code {
+    font-family: var(--font-mono);
+    font-size: 0.82em;
+    background: var(--bg-tertiary);
+    border-radius: 3px;
+    padding: 2px 6px;
+    color: var(--accent-gold);
+  }
+
+  /* ========================================================
+     FOOTER
+     ======================================================== */
+  .footer {
+    text-align: center;
+    padding: 80px 24px 60px;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .footer p {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+  }
+
+  .footer .footer-title {
+    font-family: var(--font-serif);
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+  }
+
+  /* ========================================================
+     SCROLL ANIMATIONS
+     ======================================================== */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ========================================================
+     RESPONSIVE
+     ======================================================== */
+  @media (max-width: 700px) {
+    .stage-header {
+      grid-template-columns: 80px 1fr;
+    }
+    .stage-body { padding-left: 80px; }
+    .river-line { left: 39px; }
+    .stage-number { width: 56px; height: 56px; font-size: 1.4rem; }
+    .hero { padding: 80px 16px 60px; }
+    .hero-meta { flex-direction: column; gap: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     HERO
+     ============================================================ -->
+<header class="hero">
+  <div class="hero-eyebrow">agentic_rag / Technical Explainer</div>
+  <h1>From Document to <em>Answer</em></h1>
+  <p class="hero-subtitle">
+    A six-stage journey through ingestion, vectorization, and AI-reasoned
+    retrieval &mdash; all powered by Oracle Database and nine reasoning strategies.
+  </p>
+  <div class="hero-meta">
+    <span>6 Stages</span>
+    <span>9 Strategies</span>
+    <span>4 Collections</span>
+  </div>
+</header>
+
+<hr class="section-divider">
+
+<!-- ============================================================
+     RIVER CONTAINER — all stages flow inside
+     ============================================================ -->
+<div class="river-container">
+  <div class="river-line" aria-hidden="true"></div>
+
+  <!-- ==========================================================
+       STAGE 1: Document Ingestion
+       ========================================================== -->
+  <section class="stage reveal" id="stage-1">
+    <div class="stage-header">
+      <div class="stage-number"><span>1</span></div>
+      <div class="stage-title-block">
+        <div class="stage-label">Stage One</div>
+        <h2 class="stage-title">Document Ingestion</h2>
+      </div>
+    </div>
+
+    <div class="stage-body">
+      <p>
+        Every journey begins with <strong>raw information</strong>. A user uploads a PDF,
+        provides a URL, or points to a GitHub repository. Three specialized processors
+        handle each input type, normalizing wildly different formats into clean Markdown.
+      </p>
+
+      <div class="processor-cards">
+        <!-- PDF -->
+        <div class="proc-card">
+          <div class="proc-card-icon">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+          </div>
+          <h4>PDFProcessor</h4>
+          <p>
+            Uses <span class="lib-name">Docling</span> to parse complex layouts.
+            Runs <span class="lib-name">DocumentConverter</span> then pipes
+            output through <span class="lib-name">export_to_markdown()</span>.
+          </p>
+        </div>
+        <!-- Web -->
+        <div class="proc-card">
+          <div class="proc-card-icon">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </div>
+          <h4>WebProcessor</h4>
+          <p>
+            Uses <span class="lib-name">Trafilatura</span> to cleanly extract article
+            text via <span class="lib-name">fetch_url()</span> + <span class="lib-name">extract()</span>.
+            Also captures author, date, tags, and categories via <span class="lib-name">extract_metadata()</span>.
+          </p>
+        </div>
+        <!-- Repo -->
+        <div class="proc-card">
+          <div class="proc-card-icon">
+            <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+          </div>
+          <h4>RepoProcessor</h4>
+          <p>
+            Uses <span class="lib-name">Gitingest</span> to crawl repositories,
+            preserving file structure and extracting code with context-aware
+            boundaries.
+          </p>
+        </div>
+      </div>
+
+      <div class="code-block" data-lang="python">
+        <code><span class="cmt"># Each processor returns normalized Markdown</span>
+<span class="kw">from</span> docling.document_converter <span class="kw">import</span> <span class="cls">DocumentConverter</span>
+
+<span class="var">converter</span> <span class="op">=</span> <span class="cls">DocumentConverter</span>()
+<span class="var">result</span> <span class="op">=</span> <span class="var">converter</span>.<span class="fn">convert</span>(<span class="str">"report.pdf"</span>)
+<span class="var">markdown</span> <span class="op">=</span> <span class="var">result</span>.document.<span class="fn">export_to_markdown</span>()
+
+<span class="cmt"># Web extraction with metadata</span>
+<span class="kw">import</span> trafilatura
+<span class="var">downloaded</span> <span class="op">=</span> trafilatura.<span class="fn">fetch_url</span>(<span class="str">"https://example.com/article"</span>)
+<span class="var">text</span> <span class="op">=</span> trafilatura.<span class="fn">extract</span>(<span class="var">downloaded</span>)
+<span class="var">meta</span> <span class="op">=</span> trafilatura.<span class="fn">extract_metadata</span>(<span class="var">downloaded</span>)
+<span class="cmt"># meta.author, meta.date, meta.tags, meta.categories</span></code>
+      </div>
+
+      <!-- Mermaid: 3 input paths converging -->
+      <div class="mermaid-wrapper">
+        <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#2a2522', 'primaryTextColor': '#f5e6d3', 'primaryBorderColor': '#e8913a', 'lineColor': '#d4763c', 'secondaryColor': '#221e1b', 'tertiaryColor': '#1a1614', 'edgeLabelBackground': '#1a1614', 'clusterBkg': '#221e1b', 'clusterBorder': '#c75b39', 'nodeTextColor': '#f5e6d3' }}}%%
+graph TD
+    A["fa:fa-file-pdf PDF Upload"] -->|Docling| D["DocumentConverter"]
+    B["fa:fa-globe URL / Web Page"] -->|Trafilatura| E["fetch_url + extract"]
+    C["fa:fa-code GitHub Repo"] -->|Gitingest| F["Code + Structure"]
+    D --> G["Normalized Markdown"]
+    E --> G
+    F --> G
+    G --> H["Ready for Chunking"]
+
+    style A fill:#2a2522,stroke:#e8913a,color:#f5e6d3
+    style B fill:#2a2522,stroke:#e8913a,color:#f5e6d3
+    style C fill:#2a2522,stroke:#e8913a,color:#f5e6d3
+    style D fill:#221e1b,stroke:#d4763c,color:#f5e6d3
+    style E fill:#221e1b,stroke:#d4763c,color:#f5e6d3
+    style F fill:#221e1b,stroke:#d4763c,color:#f5e6d3
+    style G fill:#2a2522,stroke:#c75b39,color:#f5e6d3
+    style H fill:#2a2522,stroke:#e8913a,color:#e8913a
+        </div>
+        <div class="mermaid-caption">Fig 1.1 &mdash; Three input paths converge into normalized Markdown</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       STAGE 2: Chunking & Normalization
+       ========================================================== -->
+  <section class="stage reveal" id="stage-2">
+    <div class="stage-header">
+      <div class="stage-number"><span>2</span></div>
+      <div class="stage-title-block">
+        <div class="stage-label">Stage Two</div>
+        <h2 class="stage-title">Chunking &amp; Normalization</h2>
+      </div>
+    </div>
+
+    <div class="stage-body">
+      <p>
+        Raw Markdown is still too large for embedding models. <strong>OracleTextSplitter</strong>
+        runs server-side inside Oracle Database itself, splitting text into overlapping chunks
+        while normalizing whitespace and Unicode.
+      </p>
+
+      <p>
+        Each chunk is enriched with metadata: its source document, a unique
+        <span class="inline-code">document_id</span>, and a sequential
+        <span class="inline-code">chunk_index</span> for reassembly.
+      </p>
+
+      <div class="code-block" data-lang="python">
+        <code><span class="kw">from</span> langchain_community.document_loaders <span class="kw">import</span> <span class="cls">OracleTextSplitter</span>
+
+<span class="var">splitter</span> <span class="op">=</span> <span class="cls">OracleTextSplitter</span>(
+    <span class="var">conn</span><span class="op">=</span><span class="var">oracle_connection</span>,
+    <span class="var">max_chunk_size</span><span class="op">=</span><span class="num">512</span>,
+    <span class="var">overlap</span><span class="op">=</span><span class="num">64</span>,
+    <span class="var">normalize</span><span class="op">=</span><span class="str">"all"</span>  <span class="cmt"># whitespace + unicode normalization</span>
+)
+
+<span class="var">chunks</span> <span class="op">=</span> <span class="var">splitter</span>.<span class="fn">split_text</span>(<span class="var">markdown</span>)
+<span class="cmt"># Each chunk: { text, source, document_id, chunk_index }</span></code>
+      </div>
+
+      <!-- Before / After visual -->
+      <div class="before-after">
+        <div class="ba-panel">
+          <div class="ba-panel-label">Before &mdash; Raw Text</div>
+          <pre>The   quick brown fox jumped
+over the    lazy dog.  Unicode
+chars like \u2018smart quotes\u2019
+and em\u2014dashes are   scattered
+throughout   the    document
+alongside     irregular
+whitespace and  line   breaks...</pre>
+        </div>
+        <div class="before-after-arrow">
+          <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </div>
+        <div class="ba-panel">
+          <div class="ba-panel-label">After &mdash; Normalized Chunk</div>
+          <pre>{
+  "text": "The quick brown fox jumped
+over the lazy dog. Unicode chars
+like 'smart quotes' and em-dashes
+are scattered throughout the
+document alongside irregular
+whitespace and line breaks...",
+  "source": "report.pdf",
+  "document_id": "d7f3a1b2",
+  "chunk_index": 14
+}</pre>
+        </div>
+      </div>
+
+      <div class="metrics-row">
+        <div class="metric-pill">
+          <div class="metric-pill-value">512</div>
+          <div class="metric-pill-label">max tokens<br>per chunk</div>
+        </div>
+        <div class="metric-pill">
+          <div class="metric-pill-value">64</div>
+          <div class="metric-pill-label">overlap<br>tokens</div>
+        </div>
+        <div class="metric-pill">
+          <div class="metric-pill-value">server</div>
+          <div class="metric-pill-label">side splitting<br>in Oracle DB</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       STAGE 3: Embedding & Vectorization
+       ========================================================== -->
+  <section class="stage reveal" id="stage-3">
+    <div class="stage-header">
+      <div class="stage-number"><span>3</span></div>
+      <div class="stage-title-block">
+        <div class="stage-label">Stage Three</div>
+        <h2 class="stage-title">Embedding &amp; Vectorization</h2>
+      </div>
+    </div>
+
+    <div class="stage-body">
+      <p>
+        <strong>OracleEmbeddings</strong> generates 384-dimensional vectors entirely
+        inside the database &mdash; no external API calls. The model
+        <span class="inline-code">ALL_MINILM_L12_V2</span> converts each text chunk
+        into a dense numerical representation.
+      </p>
+
+      <p>
+        Vectors are stored alongside their source text in <strong>OracleVS</strong> tables,
+        organized into four separate collections for precise retrieval scoping.
+      </p>
+
+      <div class="code-block" data-lang="python">
+        <code><span class="kw">from</span> langchain_community.embeddings <span class="kw">import</span> <span class="cls">OracleEmbeddings</span>
+<span class="kw">from</span> langchain_community.vectorstores <span class="kw">import</span> <span class="cls">OracleVS</span>
+<span class="kw">from</span> langchain_community.vectorstores.utils <span class="kw">import</span> <span class="cls">DistanceStrategy</span>
+
+<span class="cmt"># Embedding model runs IN-DATABASE</span>
+<span class="var">embeddings</span> <span class="op">=</span> <span class="cls">OracleEmbeddings</span>(
+    <span class="var">conn</span><span class="op">=</span><span class="var">oracle_connection</span>,
+    <span class="var">model_name</span><span class="op">=</span><span class="str">"ALL_MINILM_L12_V2"</span>,
+    <span class="var">proxy</span><span class="op">=</span><span class="str">""</span>  <span class="cmt"># no external calls needed</span>
+)
+
+<span class="cmt"># Store in the appropriate collection</span>
+<span class="var">vector_store</span> <span class="op">=</span> <span class="cls">OracleVS</span>.<span class="fn">from_documents</span>(
+    <span class="var">documents</span><span class="op">=</span><span class="var">chunks</span>,
+    <span class="var">embedding</span><span class="op">=</span><span class="var">embeddings</span>,
+    <span class="var">client</span><span class="op">=</span><span class="var">oracle_connection</span>,
+    <span class="var">table_name</span><span class="op">=</span><span class="str">"PDF_COLLECTION"</span>,
+    <span class="var">distance_strategy</span><span class="op">=</span><span class="cls">DistanceStrategy</span>.EUCLIDEAN_DISTANCE
+)</code>
+      </div>
+
+      <!-- Vector flow visual -->
+      <div class="vector-visual">
+        <div class="vector-flow">
+          <div class="vf-step">
+            <div class="vf-step-box">"The quick brown<br>fox jumped over..."</div>
+            <div class="vf-step-label">text chunk</div>
+          </div>
+          <div class="vf-arrow">&rarr;</div>
+          <div class="vf-step">
+            <div class="vf-step-box">ALL_MINILM_L12_V2</div>
+            <div class="vf-step-label">in-database model</div>
+          </div>
+          <div class="vf-arrow">&rarr;</div>
+          <div class="vf-step">
+            <div class="vf-step-box">[0.023, -0.417, ...,<br>0.891] &times; 384</div>
+            <div class="vf-step-label">384-dim vector</div>
+          </div>
+          <div class="vf-arrow">&rarr;</div>
+          <div class="vf-step">
+            <div class="vf-step-box">OracleVS Table</div>
+            <div class="vf-step-label">stored with metadata</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>Zero external dependencies.</strong> Both embedding generation and vector storage
+        happen inside Oracle Database. No network round-trips, no API keys, no cold starts.
+      </div>
+
+      <!-- Collection table -->
+      <table class="collection-table">
+        <thead>
+          <tr>
+            <th>Collection</th>
+            <th>Source Type</th>
+            <th>Typical Use</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>PDF_COLLECTION</td>
+            <td>Uploaded PDF documents</td>
+            <td>Reports, papers, manuals</td>
+          </tr>
+          <tr>
+            <td>WEB_COLLECTION</td>
+            <td>Crawled web pages</td>
+            <td>Articles, documentation</td>
+          </tr>
+          <tr>
+            <td>REPO_COLLECTION</td>
+            <td>GitHub repositories</td>
+            <td>Source code, READMEs</td>
+          </tr>
+          <tr>
+            <td>GENERAL_COLLECTION</td>
+            <td>Mixed / unclassified</td>
+            <td>Cross-source queries</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="metrics-row">
+        <div class="metric-pill">
+          <div class="metric-pill-value">384</div>
+          <div class="metric-pill-label">vector<br>dimensions</div>
+        </div>
+        <div class="metric-pill">
+          <div class="metric-pill-value">4</div>
+          <div class="metric-pill-label">separate<br>collections</div>
+        </div>
+        <div class="metric-pill">
+          <div class="metric-pill-value">0</div>
+          <div class="metric-pill-label">external<br>API calls</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       STAGE 4: Querying with RAG
+       ========================================================== -->
+  <section class="stage reveal" id="stage-4">
+    <div class="stage-header">
+      <div class="stage-number"><span>4</span></div>
+      <div class="stage-title-block">
+        <div class="stage-label">Stage Four</div>
+        <h2 class="stage-title">Querying with RAG</h2>
+      </div>
+    </div>
+
+    <div class="stage-body">
+      <p>
+        A user asks a question through <strong>Gradio</strong>, <strong>Open WebUI</strong>,
+        the <strong>REST API</strong>, or directly from the <strong>CLI</strong>. The system
+        selects the appropriate collection based on context, then performs similarity search.
+      </p>
+
+      <p>
+        <strong>OracleVS.similarity_search_with_score()</strong> finds the top-K most relevant
+        chunks using Euclidean distance. The similarity score is computed as:
+      </p>
+
+      <div class="callout" style="font-family: var(--font-serif); font-size: 1.1rem; text-align: center; letter-spacing: 0.02em;">
+        score = 1 / (1 + euclidean_distance)
+      </div>
+
+      <p>
+        Scores closer to <strong>1.0</strong> indicate near-perfect matches; scores closer
+        to <strong>0.0</strong> mean the chunk is semantically distant from the query.
+      </p>
+
+      <div class="code-block" data-lang="python">
+        <code><span class="cmt"># User query arrives from any interface</span>
+<span class="var">query</span> <span class="op">=</span> <span class="str">"How does the authentication system handle token refresh?"</span>
+
+<span class="cmt"># Select collection and retrieve top-K chunks</span>
+<span class="var">results</span> <span class="op">=</span> <span class="var">vector_store</span>.<span class="fn">similarity_search_with_score</span>(
+    <span class="var">query</span><span class="op">=</span><span class="var">query</span>,
+    <span class="var">k</span><span class="op">=</span><span class="num">5</span>
+)
+
+<span class="cmt"># Each result: (Document, score)</span>
+<span class="kw">for</span> <span class="var">doc</span>, <span class="var">score</span> <span class="kw">in</span> <span class="var">results</span>:
+    <span class="fn">print</span>(<span class="str">f"Score: <span class="op">{</span>score:.4f<span class="op">}</span> | Source: <span class="op">{</span>doc.metadata['source']<span class="op">}</span>"</span>)
+    <span class="cmt"># Score: 0.8721 | Source: auth_module.py</span>
+    <span class="cmt"># Score: 0.8134 | Source: README.md</span>
+    <span class="cmt"># Score: 0.7456 | Source: api_docs.pdf</span></code>
+      </div>
+
+      <!-- Mermaid: Query flow -->
+      <div class="mermaid-wrapper">
+        <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#2a2522', 'primaryTextColor': '#f5e6d3', 'primaryBorderColor': '#e8913a', 'lineColor': '#d4763c', 'secondaryColor': '#221e1b', 'tertiaryColor': '#1a1614', 'edgeLabelBackground': '#1a1614', 'nodeTextColor': '#f5e6d3' }}}%%
+graph LR
+    Q["User Query"] --> S{"Select<br/>Collection"}
+    S -->|PDF context| P["PDF_COLLECTION"]
+    S -->|Web context| W["WEB_COLLECTION"]
+    S -->|Code context| R["REPO_COLLECTION"]
+    S -->|Mixed| G["GENERAL_COLLECTION"]
+    P --> VS["similarity_search_with_score()"]
+    W --> VS
+    R --> VS
+    G --> VS
+    VS --> C["Top-K Chunks<br/>+ Scores"]
+    C --> LLM["Context for LLM"]
+
+    style Q fill:#2a2522,stroke:#e8913a,color:#e8913a
+    style S fill:#221e1b,stroke:#d4763c,color:#f5e6d3
+    style P fill:#2a2522,stroke:#c75b39,color:#f5e6d3
+    style W fill:#2a2522,stroke:#c75b39,color:#f5e6d3
+    style R fill:#2a2522,stroke:#c75b39,color:#f5e6d3
+    style G fill:#2a2522,stroke:#c75b39,color:#f5e6d3
+    style VS fill:#221e1b,stroke:#e8913a,color:#f5e6d3
+    style C fill:#2a2522,stroke:#d4763c,color:#f5e6d3
+    style LLM fill:#2a2522,stroke:#e8913a,color:#e8913a
+        </div>
+        <div class="mermaid-caption">Fig 4.1 &mdash; Query routing and similarity search flow</div>
+      </div>
+
+      <div class="metrics-row">
+        <div class="metric-pill">
+          <div class="metric-pill-value">5</div>
+          <div class="metric-pill-label">top-K<br>retrieved</div>
+        </div>
+        <div class="metric-pill">
+          <div class="metric-pill-value">0.87</div>
+          <div class="metric-pill-label">typical best<br>match score</div>
+        </div>
+        <div class="metric-pill">
+          <div class="metric-pill-value">4</div>
+          <div class="metric-pill-label">interface<br>options</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       STAGE 5: Reasoning Strategy Selection
+       ========================================================== -->
+  <section class="stage reveal" id="stage-5">
+    <div class="stage-header">
+      <div class="stage-number"><span>5</span></div>
+      <div class="stage-title-block">
+        <div class="stage-label">Stage Five</div>
+        <h2 class="stage-title">Reasoning Strategy Selection</h2>
+      </div>
+    </div>
+
+    <div class="stage-body">
+      <p>
+        The user selects a reasoning strategy &mdash; or it is chosen automatically via
+        the Open WebUI "model" dropdown. With <strong>9 base strategies</strong> available
+        in both <strong>standalone</strong> and <strong>RAG-augmented</strong> modes, the system
+        offers <strong>18 total configurations</strong>.
+      </p>
+
+      <div class="callout">
+        <strong>Standalone mode</strong> uses only the LLM's parametric knowledge.
+        <strong>RAG mode</strong> augments the query with retrieved context from Stage 4.
+        Same strategy, different information budget.
+      </div>
+
+      <div class="strategy-grid">
+        <div class="strategy-cell">
+          <div class="strategy-cell-num">01</div>
+          <div class="strategy-cell-name">standard</div>
+          <div class="strategy-cell-desc">Direct response. Single-pass generation with no intermediate reasoning.</div>
+        </div>
+        <div class="strategy-cell">
+          <div class="strategy-cell-num">02</div>
+          <div class="strategy-cell-name">cot</div>
+          <div class="strategy-cell-desc">Chain of Thought. Step-by-step reasoning, showing the work before the answer.</div>
+        </div>
+        <div class="strategy-cell">
+          <div class="strategy-cell-num">03</div>
+          <div class="strategy-cell-name">tot</div>
+          <div class="strategy-cell-desc">Tree of Thoughts. BFS exploration with scoring and pruning. Width=2, depth=3.</div>
+        </div>
+        <div class="strategy-cell">
+          <div class="strategy-cell-num">04</div>
+          <div class="strategy-cell-name">react</div>
+          <div class="strategy-cell-desc">Reason+Act loop with tools: calculate, web_search, search.</div>
+        </div>
+        <div class="strategy-cell">
+          <div class="strategy-cell-num">05</div>
+          <div class="strategy-cell-name">self_reflection</div>
+          <div class="strategy-cell-desc">Draft, Critique, Refine loop. Iterates up to 5 times until satisfied.</div>
+        </div>
+        <div class="strategy-cell">
+          <div class="strategy-cell-num">06</div>
+          <div class="strategy-cell-name">consistency</div>
+          <div class="strategy-cell-desc">5 parallel samples with majority voting for robust consensus.</div>
+        </div>
+        <div class="strategy-cell">
+          <div class="strategy-cell-num">07</div>
+          <div class="strategy-cell-name">decomposed</div>
+          <div class="strategy-cell-desc">Break into sub-tasks, solve independently, synthesize into a unified answer.</div>
+        </div>
+        <div class="strategy-cell">
+          <div class="strategy-cell-num">08</div>
+          <div class="strategy-cell-name">least_to_most</div>
+          <div class="strategy-cell-desc">Easy-to-hard sub-questions with accumulating context at each step.</div>
+        </div>
+        <div class="strategy-cell">
+          <div class="strategy-cell-num">09</div>
+          <div class="strategy-cell-name">recursive</div>
+          <div class="strategy-cell-desc">Python code generation with recursive LLM calls. Max 8 steps deep.</div>
+        </div>
+      </div>
+
+      <!-- Mermaid: Strategy modes -->
+      <div class="mermaid-wrapper">
+        <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#2a2522', 'primaryTextColor': '#f5e6d3', 'primaryBorderColor': '#e8913a', 'lineColor': '#d4763c', 'secondaryColor': '#221e1b', 'tertiaryColor': '#1a1614', 'edgeLabelBackground': '#1a1614', 'nodeTextColor': '#f5e6d3' }}}%%
+graph TD
+    U["User / Open WebUI"] --> M{"Strategy<br/>Selection"}
+    M --> SA["Standalone Mode"]
+    M --> RA["RAG-Augmented Mode"]
+    SA --> S1["9 Base Strategies"]
+    RA --> S2["9 Base Strategies<br/>+ Retrieved Context"]
+    S1 --> OUT["18 Total Configurations"]
+    S2 --> OUT
+
+    style U fill:#2a2522,stroke:#e8913a,color:#e8913a
+    style M fill:#221e1b,stroke:#d4763c,color:#f5e6d3
+    style SA fill:#2a2522,stroke:#c75b39,color:#f5e6d3
+    style RA fill:#2a2522,stroke:#c75b39,color:#f5e6d3
+    style S1 fill:#221e1b,stroke:#d4763c,color:#f5e6d3
+    style S2 fill:#221e1b,stroke:#d4763c,color:#f5e6d3
+    style OUT fill:#2a2522,stroke:#e8913a,color:#e8913a
+        </div>
+        <div class="mermaid-caption">Fig 5.1 &mdash; 9 strategies &times; 2 modes = 18 configurations</div>
+      </div>
+
+      <div class="metrics-row">
+        <div class="metric-pill">
+          <div class="metric-pill-value">9</div>
+          <div class="metric-pill-label">base<br>strategies</div>
+        </div>
+        <div class="metric-pill">
+          <div class="metric-pill-value">2</div>
+          <div class="metric-pill-label">modes per<br>strategy</div>
+        </div>
+        <div class="metric-pill">
+          <div class="metric-pill-value">18</div>
+          <div class="metric-pill-label">total<br>configurations</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       STAGE 6: Answer Generation
+       ========================================================== -->
+  <section class="stage reveal" id="stage-6">
+    <div class="stage-header">
+      <div class="stage-number"><span>6</span></div>
+      <div class="stage-title-block">
+        <div class="stage-label">Stage Six</div>
+        <h2 class="stage-title">Answer Generation</h2>
+      </div>
+    </div>
+
+    <div class="stage-body">
+      <p>
+        <strong>RAGReasoningEnsemble</strong> weaves the retrieved context into the user's
+        query and hands it to the selected reasoning strategy. For Chain-of-Thought in
+        agentic_rag, four specialized agents collaborate in a pipeline:
+      </p>
+
+      <!-- Pipeline nodes -->
+      <div class="pipeline">
+        <div class="pipeline-node">
+          Planner
+          <small>decomposes the task</small>
+        </div>
+        <div class="pipeline-arrow">&rarr;</div>
+        <div class="pipeline-node">
+          Researcher
+          <small>gathers evidence</small>
+        </div>
+        <div class="pipeline-arrow">&rarr;</div>
+        <div class="pipeline-node">
+          Reasoner
+          <small>analyzes &amp; infers</small>
+        </div>
+        <div class="pipeline-arrow">&rarr;</div>
+        <div class="pipeline-node">
+          Synthesizer
+          <small>composes answer</small>
+        </div>
+      </div>
+
+      <div class="code-block" data-lang="python">
+        <code><span class="kw">from</span> agentic_rag.ensemble <span class="kw">import</span> <span class="cls">RAGReasoningEnsemble</span>
+
+<span class="var">ensemble</span> <span class="op">=</span> <span class="cls">RAGReasoningEnsemble</span>(
+    <span class="var">strategy</span><span class="op">=</span><span class="str">"cot"</span>,
+    <span class="var">vector_store</span><span class="op">=</span><span class="var">vector_store</span>,
+    <span class="var">llm</span><span class="op">=</span><span class="var">ollama_model</span>,
+    <span class="var">top_k</span><span class="op">=</span><span class="num">5</span>
+)
+
+<span class="var">result</span> <span class="op">=</span> <span class="var">ensemble</span>.<span class="fn">process</span>(<span class="var">query</span><span class="op">=</span><span class="str">"How does token refresh work?"</span>)
+
+<span class="cmt"># Result structure</span>
+<span class="fn">print</span>(<span class="var">result</span>.answer)           <span class="cmt"># The final answer</span>
+<span class="fn">print</span>(<span class="var">result</span>.reasoning_steps)  <span class="cmt"># Step-by-step trace</span>
+<span class="fn">print</span>(<span class="var">result</span>.sources)           <span class="cmt"># Source documents used</span>
+<span class="fn">print</span>(<span class="var">result</span>.execution_trace)   <span class="cmt"># Full agent execution log</span></code>
+      </div>
+
+      <p>
+        Every interaction is logged to Oracle Database across multiple event tables,
+        creating a complete audit trail for observability and debugging:
+      </p>
+
+      <div class="event-tags">
+        <span class="event-tag">API_EVENTS</span>
+        <span class="event-tag">MODEL_EVENTS</span>
+        <span class="event-tag">QUERY_EVENTS</span>
+        <span class="event-tag">RETRIEVAL_EVENTS</span>
+        <span class="event-tag">STRATEGY_EVENTS</span>
+        <span class="event-tag">AGENT_EVENTS</span>
+        <span class="event-tag">ERROR_EVENTS</span>
+      </div>
+
+      <!-- Mermaid: Full end-to-end flow -->
+      <div class="mermaid-wrapper">
+        <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#2a2522', 'primaryTextColor': '#f5e6d3', 'primaryBorderColor': '#e8913a', 'lineColor': '#d4763c', 'secondaryColor': '#221e1b', 'tertiaryColor': '#1a1614', 'edgeLabelBackground': '#1a1614', 'nodeTextColor': '#f5e6d3' }}}%%
+graph TD
+    Q["User Query + Context"] --> ENS["RAGReasoningEnsemble"]
+    ENS --> AUG["Augment query<br/>with retrieved chunks"]
+    AUG --> STR{"Selected Strategy"}
+    STR -->|cot| PLAN["Planner Agent"]
+    PLAN --> RES["Researcher Agent"]
+    RES --> REA["Reasoner Agent"]
+    REA --> SYN["Synthesizer Agent"]
+    STR -->|tot| TOT["BFS Tree<br/>Exploration"]
+    STR -->|other| OTH["Strategy-specific<br/>Pipeline"]
+    SYN --> ANS["Final Answer"]
+    TOT --> ANS
+    OTH --> ANS
+    ANS --> LOG["Oracle Event Logging"]
+
+    style Q fill:#2a2522,stroke:#e8913a,color:#e8913a
+    style ENS fill:#221e1b,stroke:#d4763c,color:#f5e6d3
+    style AUG fill:#2a2522,stroke:#c75b39,color:#f5e6d3
+    style STR fill:#221e1b,stroke:#e8913a,color:#f5e6d3
+    style PLAN fill:#2a2522,stroke:#d4763c,color:#f5e6d3
+    style RES fill:#2a2522,stroke:#d4763c,color:#f5e6d3
+    style REA fill:#2a2522,stroke:#d4763c,color:#f5e6d3
+    style SYN fill:#2a2522,stroke:#d4763c,color:#f5e6d3
+    style TOT fill:#2a2522,stroke:#c75b39,color:#f5e6d3
+    style OTH fill:#2a2522,stroke:#c75b39,color:#f5e6d3
+    style ANS fill:#2a2522,stroke:#e8913a,color:#e8913a
+    style LOG fill:#221e1b,stroke:#c75b39,color:#f5e6d3
+        </div>
+        <div class="mermaid-caption">Fig 6.1 &mdash; Answer generation with RAGReasoningEnsemble</div>
+      </div>
+
+      <div class="code-block" data-lang="json">
+        <code><span class="cmt">// Example response structure</span>
+{
+  <span class="str">"answer"</span>: <span class="str">"The authentication system handles token refresh through a background daemon that monitors JWT expiry timestamps. When a token reaches 80% of its TTL, the refresh cycle initiates..."</span>,
+  <span class="str">"reasoning_steps"</span>: [
+    <span class="str">"Identified 3 relevant code modules in REPO_COLLECTION"</span>,
+    <span class="str">"Cross-referenced with API documentation in WEB_COLLECTION"</span>,
+    <span class="str">"Synthesized token lifecycle from auth_handler.py (score: 0.89)"</span>
+  ],
+  <span class="str">"sources"</span>: [
+    { <span class="str">"file"</span>: <span class="str">"auth_handler.py"</span>, <span class="str">"chunk"</span>: <span class="num">7</span>, <span class="str">"score"</span>: <span class="num">0.8912</span> },
+    { <span class="str">"file"</span>: <span class="str">"api_docs.pdf"</span>, <span class="str">"chunk"</span>: <span class="num">23</span>, <span class="str">"score"</span>: <span class="num">0.8134</span> }
+  ],
+  <span class="str">"execution_trace"</span>: {
+    <span class="str">"strategy"</span>: <span class="str">"cot"</span>,
+    <span class="str">"mode"</span>: <span class="str">"rag"</span>,
+    <span class="str">"agents_invoked"</span>: [<span class="str">"planner"</span>, <span class="str">"researcher"</span>, <span class="str">"reasoner"</span>, <span class="str">"synthesizer"</span>],
+    <span class="str">"total_llm_calls"</span>: <span class="num">6</span>,
+    <span class="str">"elapsed_ms"</span>: <span class="num">4821</span>
+  }
+}</code>
+      </div>
+    </div>
+  </section>
+
+</div><!-- end river-container -->
+
+<!-- ============================================================
+     FOOTER
+     ============================================================ -->
+<footer class="footer">
+  <div class="footer-title">The Journey is Complete</div>
+  <p>From raw document to reasoned answer &mdash; six stages, zero compromises.</p>
+  <p style="margin-top: 8px;">agentic_rag &middot; Oracle AI Vector Search &middot; LangChain</p>
+</footer>
+
+<!-- ============================================================
+     SCRIPTS
+     ============================================================ -->
+<script>
+  // Initialize Mermaid with warm dark theme
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      darkMode: true,
+      background: '#1a1614',
+      primaryColor: '#2a2522',
+      primaryTextColor: '#f5e6d3',
+      primaryBorderColor: '#e8913a',
+      lineColor: '#d4763c',
+      secondaryColor: '#221e1b',
+      tertiaryColor: '#1a1614',
+      fontFamily: 'Inter, sans-serif',
+      fontSize: '13px',
+      edgeLabelBackground: '#1a1614',
+      nodeTextColor: '#f5e6d3',
+      clusterBkg: '#221e1b',
+      clusterBorder: '#c75b39'
+    },
+    flowchart: {
+      htmlLabels: true,
+      curve: 'basis',
+      padding: 16,
+      nodeSpacing: 40,
+      rankSpacing: 50
+    }
+  });
+
+  // Scroll reveal animation
+  const observerOptions = {
+    root: null,
+    rootMargin: '0px 0px -60px 0px',
+    threshold: 0.1
+  };
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, observerOptions);
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>

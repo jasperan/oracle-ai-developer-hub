@@ -1,0 +1,1911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REASONING STRATEGIES // COMPARED</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+  /* ═══════════════════════════════════════════════════════════
+     TERMINAL MONO AESTHETIC — The Matrix meets documentation
+     ═══════════════════════════════════════════════════════════ */
+
+  :root {
+    --bg-primary: #0a0a0a;
+    --bg-card: #0d0d0d;
+    --bg-card-header: #111111;
+    --green-primary: #00ff41;
+    --green-accent: #39ff14;
+    --green-dim: #0a3d0a;
+    --green-muted: #1a5c1a;
+    --green-dark: #003300;
+    --green-ghost: rgba(0, 255, 65, 0.05);
+    --green-border: rgba(0, 255, 65, 0.2);
+    --green-border-bright: rgba(0, 255, 65, 0.4);
+    --text-primary: #00ff41;
+    --text-secondary: #00cc33;
+    --text-dim: #008822;
+    --text-ghost: #005511;
+    --amber: #ffb000;
+    --red: #ff3333;
+    --cyan: #00ffcc;
+    --white: #ccffcc;
+    --glow-sm: 0 0 5px rgba(0, 255, 65, 0.4);
+    --glow-md: 0 0 10px rgba(0, 255, 65, 0.3), 0 0 20px rgba(0, 255, 65, 0.1);
+    --glow-lg: 0 0 10px rgba(0, 255, 65, 0.5), 0 0 30px rgba(0, 255, 65, 0.2), 0 0 60px rgba(0, 255, 65, 0.1);
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: var(--green-dim) var(--bg-primary);
+  }
+
+  body {
+    font-family: var(--font-mono);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    font-size: 13px;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* ── Scan-line overlay ── */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 255, 65, 0.015) 2px,
+      rgba(0, 255, 65, 0.015) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ── Phosphor flicker animation ── */
+  @keyframes flicker {
+    0%, 100% { opacity: 1; }
+    92% { opacity: 1; }
+    93% { opacity: 0.8; }
+    94% { opacity: 1; }
+    96% { opacity: 0.9; }
+    97% { opacity: 1; }
+  }
+
+  @keyframes cursor-blink {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+
+  @keyframes scanline-move {
+    0% { top: -5%; }
+    100% { top: 105%; }
+  }
+
+  /* ── Moving scan-line ── */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -5%;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(180deg, transparent, rgba(0, 255, 65, 0.1), transparent);
+    box-shadow: 0 0 40px 10px rgba(0, 255, 65, 0.06);
+    animation: scanline-move 8s linear infinite;
+    pointer-events: none;
+    z-index: 9998;
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg-primary); }
+  ::-webkit-scrollbar-thumb { background: var(--green-dim); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--green-muted); }
+
+  /* ── Layout ── */
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px 30px;
+  }
+
+  /* ══════════════════════════════════════
+     HEADER / BOOT SEQUENCE
+     ══════════════════════════════════════ */
+
+  .boot-sequence {
+    padding: 40px 0 20px;
+    border-bottom: 1px solid var(--green-border);
+    margin-bottom: 30px;
+  }
+
+  .boot-line {
+    color: var(--text-dim);
+    font-size: 11px;
+    line-height: 1.8;
+    animation: flicker 4s infinite;
+  }
+
+  .boot-line.ok::after {
+    content: ' [OK]';
+    color: var(--green-accent);
+    text-shadow: var(--glow-sm);
+  }
+
+  .boot-line.loaded::after {
+    content: ' [LOADED]';
+    color: var(--amber);
+  }
+
+  .header-title {
+    margin-top: 20px;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: var(--green-accent);
+    text-shadow: var(--glow-lg);
+    text-transform: uppercase;
+  }
+
+  .header-subtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 6px;
+    letter-spacing: 2px;
+  }
+
+  .header-query {
+    margin-top: 20px;
+    padding: 15px 20px;
+    background: var(--green-ghost);
+    border: 1px solid var(--green-border);
+    border-left: 3px solid var(--green-accent);
+    font-size: 12px;
+  }
+
+  .header-query .prompt-symbol {
+    color: var(--green-accent);
+    text-shadow: var(--glow-sm);
+    margin-right: 8px;
+    font-weight: 700;
+  }
+
+  .header-query .query-text {
+    color: var(--white);
+  }
+
+  .cursor-block {
+    display: inline-block;
+    width: 8px;
+    height: 14px;
+    background: var(--green-accent);
+    animation: cursor-blink 1s step-end infinite;
+    vertical-align: middle;
+    margin-left: 2px;
+    box-shadow: var(--glow-sm);
+  }
+
+  /* ══════════════════════════════════════
+     COMPARISON GRID TABLE
+     ══════════════════════════════════════ */
+
+  .comparison-section {
+    margin: 40px 0;
+  }
+
+  .section-header {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--green-accent);
+    text-shadow: var(--glow-md);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--green-border);
+  }
+
+  .section-header::before {
+    content: '┌── ';
+    color: var(--text-dim);
+  }
+  .section-header::after {
+    content: ' ──┐';
+    color: var(--text-dim);
+  }
+
+  .grid-table-wrapper {
+    overflow-x: auto;
+    border: 1px solid var(--green-border);
+    background: var(--bg-card);
+  }
+
+  table.grid-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    min-width: 1100px;
+  }
+
+  table.grid-table thead th {
+    background: var(--bg-card-header);
+    color: var(--green-accent);
+    text-shadow: var(--glow-sm);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 12px 10px;
+    border-bottom: 2px solid var(--green-border-bright);
+    border-right: 1px solid var(--green-border);
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  table.grid-table thead th:last-child { border-right: none; }
+
+  table.grid-table tbody td {
+    padding: 10px;
+    border-bottom: 1px solid var(--green-border);
+    border-right: 1px solid var(--green-border);
+    color: var(--text-secondary);
+    vertical-align: top;
+  }
+
+  table.grid-table tbody td:last-child { border-right: none; }
+  table.grid-table tbody tr:last-child td { border-bottom: none; }
+
+  table.grid-table tbody tr:hover {
+    background: var(--green-ghost);
+  }
+
+  table.grid-table tbody td:first-child {
+    color: var(--green-accent);
+    text-shadow: var(--glow-sm);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 2px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-fast { background: rgba(0, 255, 65, 0.15); color: var(--green-accent); border: 1px solid var(--green-border); }
+  .badge-medium { background: rgba(255, 176, 0, 0.1); color: var(--amber); border: 1px solid rgba(255, 176, 0, 0.3); }
+  .badge-slow { background: rgba(255, 51, 51, 0.1); color: var(--red); border: 1px solid rgba(255, 51, 51, 0.3); }
+  .badge-parallel { background: rgba(0, 255, 204, 0.1); color: var(--cyan); border: 1px solid rgba(0, 255, 204, 0.3); }
+
+  /* ══════════════════════════════════════
+     TERMINAL WINDOW CARDS
+     ══════════════════════════════════════ */
+
+  .strategy-card {
+    margin: 50px 0;
+    border: 1px solid var(--green-border);
+    background: var(--bg-card);
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.03);
+  }
+
+  .card-titlebar {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    background: var(--bg-card-header);
+    border-bottom: 1px solid var(--green-border);
+    gap: 8px;
+  }
+
+  .titlebar-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 1px solid;
+  }
+  .dot-red { background: #3a1111; border-color: #ff3333; }
+  .dot-yellow { background: #3a2d00; border-color: #ffb000; }
+  .dot-green { background: #0a3d0a; border-color: #00ff41; box-shadow: var(--glow-sm); }
+
+  .titlebar-text {
+    flex: 1;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .titlebar-index {
+    color: var(--text-dim);
+    font-size: 10px;
+  }
+
+  .card-body {
+    padding: 24px;
+  }
+
+  .card-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .meta-item {
+    padding: 12px;
+    border: 1px solid var(--green-border);
+    background: rgba(0, 255, 65, 0.02);
+  }
+
+  .meta-label {
+    font-size: 9px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 4px;
+  }
+
+  .meta-value {
+    font-size: 12px;
+    color: var(--green-accent);
+    text-shadow: var(--glow-sm);
+  }
+
+  .meta-value.amber { color: var(--amber); text-shadow: 0 0 5px rgba(255, 176, 0, 0.4); }
+  .meta-value.red { color: var(--red); text-shadow: 0 0 5px rgba(255, 51, 51, 0.4); }
+  .meta-value.cyan { color: var(--cyan); text-shadow: 0 0 5px rgba(0, 255, 204, 0.4); }
+
+  /* ── Prompt blocks ── */
+  .prompt-block {
+    margin: 16px 0;
+    padding: 16px;
+    background: var(--bg-primary);
+    border: 1px solid var(--green-border);
+    border-left: 3px solid var(--green-dim);
+    font-size: 11px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--text-secondary);
+    overflow-x: auto;
+  }
+
+  .prompt-block .keyword {
+    color: var(--green-accent);
+    text-shadow: var(--glow-sm);
+    font-weight: 600;
+  }
+
+  .prompt-block .string {
+    color: var(--amber);
+  }
+
+  .prompt-block .comment {
+    color: var(--text-dim);
+    font-style: italic;
+  }
+
+  .prompt-block .regex-pat {
+    color: var(--cyan);
+  }
+
+  /* ── Flow diagram area ── */
+  .flow-section {
+    margin: 20px 0;
+  }
+
+  .flow-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 10px;
+  }
+
+  .flow-label::before { content: '├── '; }
+
+  .mermaid-wrapper {
+    padding: 16px;
+    background: var(--bg-primary);
+    border: 1px solid var(--green-border);
+    overflow-x: auto;
+    text-align: center;
+  }
+
+  .mermaid {
+    display: inline-block;
+  }
+
+  /* ── Box drawing dividers ── */
+  .box-divider {
+    color: var(--text-dim);
+    text-align: center;
+    padding: 8px 0;
+    font-size: 11px;
+    letter-spacing: 2px;
+    user-select: none;
+  }
+
+  /* ── Strength/Weakness indicators ── */
+  .sw-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  .sw-item {
+    padding: 12px;
+    border: 1px solid var(--green-border);
+  }
+
+  .sw-item.strength {
+    border-left: 3px solid var(--green-accent);
+  }
+  .sw-item.weakness {
+    border-left: 3px solid var(--red);
+  }
+
+  .sw-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 4px;
+  }
+  .sw-item.strength .sw-label { color: var(--green-accent); }
+  .sw-item.weakness .sw-label { color: var(--red); }
+
+  .sw-text {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  /* ══════════════════════════════════════
+     RADAR CHART SECTION
+     ══════════════════════════════════════ */
+
+  .radar-section {
+    margin: 50px 0;
+    border: 1px solid var(--green-border);
+    background: var(--bg-card);
+    padding: 24px;
+  }
+
+  .radar-container {
+    max-width: 700px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .radar-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    justify-content: center;
+    margin-top: 20px;
+    font-size: 10px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-secondary);
+  }
+
+  .legend-swatch {
+    width: 12px;
+    height: 3px;
+    border-radius: 1px;
+  }
+
+  /* ══════════════════════════════════════
+     FOOTER
+     ══════════════════════════════════════ */
+
+  .footer {
+    margin-top: 60px;
+    padding: 20px 0;
+    border-top: 1px solid var(--green-border);
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 1px;
+  }
+
+  .footer .highlight {
+    color: var(--green-accent);
+    text-shadow: var(--glow-sm);
+  }
+
+  /* ── Navigation sidebar ── */
+  .nav-sidebar {
+    position: fixed;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .nav-dot {
+    display: block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--green-dim);
+    border: 1px solid var(--green-border);
+    transition: all 0.3s;
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .nav-dot:hover {
+    background: var(--green-accent);
+    box-shadow: var(--glow-sm);
+    transform: scale(1.4);
+  }
+
+  .nav-dot[title]::before {
+    content: attr(title);
+    position: absolute;
+    right: 20px;
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    padding: 2px 8px;
+    font-size: 9px;
+    border: 1px solid var(--green-border);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .nav-dot:hover::before {
+    opacity: 1;
+  }
+
+  /* ── Trace example blocks ── */
+  .trace-block {
+    margin: 16px 0;
+    padding: 16px;
+    background: var(--bg-primary);
+    border: 1px solid var(--green-border);
+    font-size: 11px;
+    line-height: 1.8;
+  }
+
+  .trace-step {
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(0, 255, 65, 0.05);
+  }
+  .trace-step:last-child { border-bottom: none; }
+
+  .trace-arrow {
+    color: var(--text-dim);
+    margin: 0 6px;
+  }
+
+  .trace-label {
+    color: var(--amber);
+    font-weight: 600;
+  }
+
+  .trace-content {
+    color: var(--text-secondary);
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    .container { padding: 10px 15px; }
+    .card-meta { grid-template-columns: 1fr; }
+    .sw-row { grid-template-columns: 1fr; }
+    .nav-sidebar { display: none; }
+    .header-title { font-size: 18px; letter-spacing: 2px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     NAVIGATION SIDEBAR
+     ═══════════════════════════════════════════════════════════ -->
+<nav class="nav-sidebar">
+  <a class="nav-dot" href="#top" title="TOP"></a>
+  <a class="nav-dot" href="#grid" title="GRID"></a>
+  <a class="nav-dot" href="#s1" title="STANDARD"></a>
+  <a class="nav-dot" href="#s2" title="COT"></a>
+  <a class="nav-dot" href="#s3" title="TOT"></a>
+  <a class="nav-dot" href="#s4" title="REACT"></a>
+  <a class="nav-dot" href="#s5" title="SELF-REFLECT"></a>
+  <a class="nav-dot" href="#s6" title="SELF-CONSIST"></a>
+  <a class="nav-dot" href="#s7" title="DECOMPOSED"></a>
+  <a class="nav-dot" href="#s8" title="LEAST-TO-MOST"></a>
+  <a class="nav-dot" href="#s9" title="RECURSIVE"></a>
+  <a class="nav-dot" href="#radar" title="RADAR"></a>
+</nav>
+
+<div class="container" id="top">
+
+<!-- ═══════════════════════════════════════════════════════════
+     BOOT SEQUENCE HEADER
+     ═══════════════════════════════════════════════════════════ -->
+<header class="boot-sequence">
+  <div class="boot-line ok">REASONING_ENGINE v2.4.1 // initializing kernel</div>
+  <div class="boot-line ok">Loading strategy modules: 9 strategies detected</div>
+  <div class="boot-line loaded">Oracle AI Vector Search adapter: connected</div>
+  <div class="boot-line ok">Mermaid renderer v10.9.1: initialized</div>
+  <div class="boot-line ok">Chart.js v4 analytics engine: ready</div>
+  <div class="boot-line" style="color: var(--green-accent); text-shadow: var(--glow-sm);">
+    ┌─────────────────────────────────────────────────────────────┐
+  </div>
+  <div class="boot-line" style="color: var(--green-accent); text-shadow: var(--glow-sm);">
+    │  ALL SYSTEMS NOMINAL — BEGIN COMPARATIVE ANALYSIS           │
+  </div>
+  <div class="boot-line" style="color: var(--green-accent); text-shadow: var(--glow-sm);">
+    └─────────────────────────────────────────────────────────────┘
+  </div>
+
+  <h1 class="header-title">Reasoning Strategies // Compared</h1>
+  <p class="header-subtitle">── 9 approaches to the same query, dissected ──</p>
+
+  <div class="header-query">
+    <span class="prompt-symbol">$</span>
+    <span class="query-text">"What are the key advantages of using Oracle AI Vector Search for RAG applications?"</span>
+    <span class="cursor-block"></span>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════
+     COMPARISON GRID
+     ═══════════════════════════════════════════════════════════ -->
+<section class="comparison-section" id="grid">
+  <h2 class="section-header">Strategy Matrix</h2>
+
+  <div class="grid-table-wrapper">
+    <table class="grid-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Strategy</th>
+          <th>Pattern</th>
+          <th>Depth</th>
+          <th>LLM Calls</th>
+          <th>Speed</th>
+          <th>Best For</th>
+          <th>Risk</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>01</td>
+          <td>STANDARD</td>
+          <td>Direct call</td>
+          <td>1 step</td>
+          <td>1</td>
+          <td><span class="badge badge-fast">FAST</span></td>
+          <td>Simple factual queries</td>
+          <td>No reasoning chain</td>
+        </tr>
+        <tr>
+          <td>02</td>
+          <td>CHAIN-OF-THOUGHT</td>
+          <td>Sequential steps</td>
+          <td>3-5 steps</td>
+          <td>1</td>
+          <td><span class="badge badge-fast">FAST</span></td>
+          <td>Step-by-step analysis</td>
+          <td>Linear, no backtrack</td>
+        </tr>
+        <tr>
+          <td>03</td>
+          <td>TREE OF THOUGHTS</td>
+          <td>BFS + pruning</td>
+          <td>width<sup>depth</sup> = 8</td>
+          <td>~14+</td>
+          <td><span class="badge badge-slow">SLOW</span></td>
+          <td>Exploring alternatives</td>
+          <td>High latency</td>
+        </tr>
+        <tr>
+          <td>04</td>
+          <td>ReAct</td>
+          <td>Thought-Action loop</td>
+          <td>1-5 cycles</td>
+          <td>1-5</td>
+          <td><span class="badge badge-medium">MEDIUM</span></td>
+          <td>Tool-augmented tasks</td>
+          <td>Tool reliability</td>
+        </tr>
+        <tr>
+          <td>05</td>
+          <td>SELF-REFLECTION</td>
+          <td>Draft-Critique-Refine</td>
+          <td>1-5 iterations</td>
+          <td>2-10</td>
+          <td><span class="badge badge-medium">MEDIUM</span></td>
+          <td>Accuracy-critical answers</td>
+          <td>Infinite loop risk</td>
+        </tr>
+        <tr>
+          <td>06</td>
+          <td>SELF-CONSISTENCY</td>
+          <td>Multi-sample vote</td>
+          <td>k=5 parallel</td>
+          <td>5</td>
+          <td><span class="badge badge-parallel">PARALLEL</span></td>
+          <td>Consensus answers</td>
+          <td>5x cost</td>
+        </tr>
+        <tr>
+          <td>07</td>
+          <td>DECOMPOSED</td>
+          <td>Split-Solve-Merge</td>
+          <td>N + 1</td>
+          <td>N + 2</td>
+          <td><span class="badge badge-medium">MEDIUM</span></td>
+          <td>Complex multi-part queries</td>
+          <td>Bad decomposition</td>
+        </tr>
+        <tr>
+          <td>08</td>
+          <td>LEAST-TO-MOST</td>
+          <td>Easy-to-Hard chain</td>
+          <td>N questions</td>
+          <td>N + 1</td>
+          <td><span class="badge badge-medium">MEDIUM</span></td>
+          <td>Progressive understanding</td>
+          <td>Ordering quality</td>
+        </tr>
+        <tr>
+          <td>09</td>
+          <td>RECURSIVE</td>
+          <td>Code gen + exec</td>
+          <td>1-8 steps</td>
+          <td>1-8</td>
+          <td><span class="badge badge-slow">SLOW</span></td>
+          <td>Computation, iteration</td>
+          <td>Code safety</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="box-divider">─────────────────── ┤ DETAILED ANALYSIS ├ ───────────────────</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     STRATEGY 1: STANDARD
+     ═══════════════════════════════════════════════════════════ -->
+<div class="strategy-card" id="s1">
+  <div class="card-titlebar">
+    <span class="titlebar-dot dot-red"></span>
+    <span class="titlebar-dot dot-yellow"></span>
+    <span class="titlebar-dot dot-green"></span>
+    <span class="titlebar-text">01 // STANDARD</span>
+    <span class="titlebar-index">strategy_standard.py</span>
+  </div>
+  <div class="card-body">
+    <div class="card-meta">
+      <div class="meta-item">
+        <div class="meta-label">Pattern</div>
+        <div class="meta-value">Direct LLM call</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Depth</div>
+        <div class="meta-value">1 step</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">LLM Calls</div>
+        <div class="meta-value">1</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Latency Class</div>
+        <div class="meta-value">Minimal (~1-3s)</div>
+      </div>
+    </div>
+
+    <div class="flow-section">
+      <div class="flow-label">Prompt Template</div>
+      <div class="prompt-block"><span class="keyword">prompt</span> = <span class="string">f"Question: {query}\n\nAnswer:"</span>
+
+<span class="comment"># That's it. No chain, no reasoning scaffold.</span>
+<span class="comment"># Pure signal: question in, answer out.</span></div>
+    </div>
+
+    <div class="flow-section">
+      <div class="flow-label">Execution Flow</div>
+      <div class="mermaid-wrapper">
+        <pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#003300', 'primaryTextColor': '#00ff41', 'primaryBorderColor': '#00ff41', 'lineColor': '#39ff14', 'secondaryColor': '#0a3d0a', 'tertiaryColor': '#0a0a0a', 'edgeLabelBackground': '#0a0a0a', 'clusterBkg': '#0d0d0d', 'clusterBorder': '#00ff41', 'titleColor': '#00ff41' }}}%%
+graph LR
+    A["<b>QUERY</b><br/>Oracle AI Vector Search<br/>advantages for RAG?"] --> B["<b>GENERATE</b><br/>Single LLM call"]
+    B --> C["<b>ANSWER</b><br/>Direct response"]
+    style A fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+    style B fill:#0a3d0a,stroke:#39ff14,stroke-width:1px,color:#39ff14
+    style C fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+        </pre>
+      </div>
+    </div>
+
+    <div class="flow-section">
+      <div class="flow-label">Example Trace</div>
+      <div class="trace-block">
+        <div class="trace-step"><span class="trace-label">INPUT</span> <span class="trace-arrow">──&gt;</span> <span class="trace-content">"What are the key advantages of using Oracle AI Vector Search for RAG applications?"</span></div>
+        <div class="trace-step"><span class="trace-label">LLM  </span> <span class="trace-arrow">──&gt;</span> <span class="trace-content">Generates complete answer in one pass</span></div>
+        <div class="trace-step"><span class="trace-label">OUT  </span> <span class="trace-arrow">──&gt;</span> <span class="trace-content">"Oracle AI Vector Search offers several advantages for RAG: integrated vector storage within Oracle DB, SQL-based similarity search, enterprise-grade security..."</span></div>
+      </div>
+    </div>
+
+    <div class="sw-row">
+      <div class="sw-item strength">
+        <div class="sw-label">+ Strength</div>
+        <div class="sw-text">Speed and simplicity. No overhead. Ideal baseline.</div>
+      </div>
+      <div class="sw-item weakness">
+        <div class="sw-label">- Weakness</div>
+        <div class="sw-text">No reasoning chain. No self-correction. Black box output.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     STRATEGY 2: CHAIN-OF-THOUGHT
+     ═══════════════════════════════════════════════════════════ -->
+<div class="strategy-card" id="s2">
+  <div class="card-titlebar">
+    <span class="titlebar-dot dot-red"></span>
+    <span class="titlebar-dot dot-yellow"></span>
+    <span class="titlebar-dot dot-green"></span>
+    <span class="titlebar-text">02 // CHAIN-OF-THOUGHT (CoT)</span>
+    <span class="titlebar-index">strategy_cot.py</span>
+  </div>
+  <div class="card-body">
+    <div class="card-meta">
+      <div class="meta-item">
+        <div class="meta-label">Pattern</div>
+        <div class="meta-value">Sequential step reasoning</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Depth</div>
+        <div class="meta-value">~3-5 steps</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Detection Regex</div>
+        <div class="meta-value cyan">r"(?:Step\s*(\d+)|^(\d+)\.)"</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">LLM Calls</div>
+        <div class="meta-value">1 (with structured output)</div>
+      </div>
+    </div>
+
+    <div class="flow-section">
+      <div class="flow-label">Prompt Template</div>
+      <div class="prompt-block"><span class="keyword">system</span> = <span class="string">"Think step-by-step. Number each step (Step 1, Step 2, etc.)."</span>
+
+<span class="keyword">prompt</span> = <span class="string">f"""Think step-by-step about the following question.
+Number each step (Step 1, Step 2, etc.).
+After your reasoning, provide a clear final answer.
+
+Question: {query}"""</span>
+
+<span class="comment"># Detection: extract steps with regex</span>
+<span class="keyword">steps</span> = re.findall(<span class="regex-pat">r"(?:Step\s*(\d+)|^(\d+)\.)"</span>, response, re.MULTILINE)</div>
+    </div>
+
+    <div class="flow-section">
+      <div class="flow-label">Execution Flow</div>
+      <div class="mermaid-wrapper">
+        <pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#003300', 'primaryTextColor': '#00ff41', 'primaryBorderColor': '#00ff41', 'lineColor': '#39ff14', 'secondaryColor': '#0a3d0a', 'tertiaryColor': '#0a0a0a', 'edgeLabelBackground': '#0a0a0a' }}}%%
+graph LR
+    Q["<b>QUERY</b>"] --> S1["<b>Step 1</b><br/>Identify what<br/>Vector Search is"]
+    S1 --> S2["<b>Step 2</b><br/>List RAG<br/>requirements"]
+    S2 --> S3["<b>Step 3</b><br/>Map advantages<br/>to requirements"]
+    S3 --> S4["<b>Step 4</b><br/>Compare with<br/>alternatives"]
+    S4 --> A["<b>ANSWER</b><br/>Synthesized<br/>conclusion"]
+    style Q fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+    style S1 fill:#0a3d0a,stroke:#39ff14,stroke-width:1px,color:#39ff14
+    style S2 fill:#0a3d0a,stroke:#39ff14,stroke-width:1px,color:#39ff14
+    style S3 fill:#0a3d0a,stroke:#39ff14,stroke-width:1px,color:#39ff14
+    style S4 fill:#0a3d0a,stroke:#39ff14,stroke-width:1px,color:#39ff14
+    style A fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+        </pre>
+      </div>
+    </div>
+
+    <div class="flow-section">
+      <div class="flow-label">Example Trace</div>
+      <div class="trace-block">
+        <div class="trace-step"><span class="trace-label">Step 1</span> <span class="trace-arrow">──&gt;</span> <span class="trace-content">Understand what Oracle AI Vector Search provides: native vector storage, HNSW/IVF indexes, SQL-based similarity queries inside Oracle DB.</span></div>
+        <div class="trace-step"><span class="trace-label">Step 2</span> <span class="trace-arrow">──&gt;</span> <span class="trace-content">Identify RAG pipeline needs: embedding storage, fast retrieval, metadata filtering, transactional consistency.</span></div>
+        <div class="trace-step"><span class="trace-label">Step 3</span> <span class="trace-arrow">──&gt;</span> <span class="trace-content">Map advantages: no separate vector DB needed, ACID compliance, unified SQL interface, enterprise security inherited.</span></div>
+        <div class="trace-step"><span class="trace-label">Step 4</span> <span class="trace-arrow">──&gt;</span> <span class="trace-content">Compare: vs Pinecone (managed but external), vs pgvector (less mature indexing), vs Chroma (no enterprise features).</span></div>
+        <div class="trace-step"><span class="trace-label">ANSWER</span> <span class="trace-arrow">──&gt;</span> <span class="trace-content">Oracle AI Vector Search uniquely combines enterprise DB capabilities with vector similarity search, eliminating the need for a separate vector database in RAG architectures.</span></div>
+      </div>
+    </div>
+
+    <div class="sw-row">
+      <div class="sw-item strength">
+        <div class="sw-label">+ Strength</div>
+        <div class="sw-text">Transparent reasoning. Each step is auditable. Still only 1 LLM call.</div>
+      </div>
+      <div class="sw-item weakness">
+        <div class="sw-label">- Weakness</div>
+        <div class="sw-text">Linear reasoning only. No self-correction if Step 2 is wrong, Step 3 builds on the error.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     STRATEGY 3: TREE OF THOUGHTS
+     ═══════════════════════════════════════════════════════════ -->
+<div class="strategy-card" id="s3">
+  <div class="card-titlebar">
+    <span class="titlebar-dot dot-red"></span>
+    <span class="titlebar-dot dot-yellow"></span>
+    <span class="titlebar-dot dot-green"></span>
+    <span class="titlebar-text">03 // TREE OF THOUGHTS (ToT)</span>
+    <span class="titlebar-index">strategy_tot.py</span>
+  </div>
+  <div class="card-body">
+    <div class="card-meta">
+      <div class="meta-item">
+        <div class="meta-label">Pattern</div>
+        <div class="meta-value">BFS exploration + pruning</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Config</div>
+        <div class="meta-value">width=2, depth=3</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Scoring Regex</div>
+        <div class="meta-value cyan">r"Score:\s*(0\.\d+|1\.0)"</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Total Candidates</div>
+        <div class="meta-value amber">2^3 = 8 paths explored</div>
+      </div>
+    </div>
+
+    <div class="flow-section">
+      <div class="flow-label">System Prompt</div>
+      <div class="prompt-block"><span class="keyword">system</span> = <span class="string">"You are a logic engine. Provide detailed, academic answers."</span>
+
+<span class="comment"># Phase 1: Generate `width` options at each node</span>
+<span class="keyword">gen_prompt</span> = <span class="string">f"Generate {width} different approaches to: {query}"</span>
+
+<span class="comment"># Phase 2: Score each option</span>
+<span class="keyword">score_prompt</span> = <span class="string">f"Score this approach (0.0 to 1.0): {option}"</span>
+
+<span class="comment"># Phase 3: Prune low-scoring, expand best at next depth</span>
+score = re.search(<span class="regex-pat">r"Score:\s*(0\.\d+|1\.0)"</span>, response)
+<span class="comment"># Repeat for `depth` levels, then synthesize best path</span></div>
+    </div>
+
+    <div class="flow-section">
+      <div class="flow-label">Execution Flow</div>
+      <div class="mermaid-wrapper">
+        <pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#003300', 'primaryTextColor': '#00ff41', 'primaryBorderColor': '#00ff41', 'lineColor': '#39ff14', 'secondaryColor': '#0a3d0a', 'tertiaryColor': '#0a0a0a', 'edgeLabelBackground': '#0a0a0a' }}}%%
+graph TD
+    Q["<b>QUERY</b>"] --> A1["<b>Option A</b><br/>Focus on architecture<br/><i>Score: 0.82</i>"]
+    Q --> B1["<b>Option B</b><br/>Focus on performance<br/><i>Score: 0.71</i>"]
+    A1 --> A2["<b>A.1</b><br/>Unified DB layer<br/><i>Score: 0.88</i>"]
+    A1 --> A3["<b>A.2</b><br/>SQL integration<br/><i>Score: 0.79</i>"]
+    B1 --> B2["<b>B.1</b><br/>HNSW indexing<br/><i>Score: 0.74</i>"]
+    B1 --> B3["<b>B.2</b><br/>Batch processing<br/><i>Score: 0.65</i>"]
+    A2 --> A4["<b>A.1.1 BEST</b><br/><i>Score: 0.91</i>"]
+    A2 --> A5["A.1.2<br/><i>Score: 0.77</i>"]
+    A3 --> A6["A.2.1<br/><i>Score: 0.72</i>"]
+    A3 --> A7["A.2.2<br/><i>Score: 0.68</i>"]
+    A4 --> F["<b>FINAL ANSWER</b><br/>Best path synthesis"]
+    style Q fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+    style A1 fill:#0a3d0a,stroke:#39ff14,stroke-width:1px,color:#39ff14
+    style B1 fill:#0a3d0a,stroke:#39ff14,stroke-width:1px,color:#39ff14
+    style A2 fill:#003300,stroke:#00ff41,stroke-width:1px,color:#00ff41
+    style A3 fill:#0a3d0a,stroke:#39ff14,stroke-width:1px,color:#39ff14
+    style B2 fill:#1a1a00,stroke:#555500,stroke-width:1px,color:#888844
+    style B3 fill:#1a1a00,stroke:#555500,stroke-width:1px,color:#888844
+    style A4 fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+    style A5 fill:#1a1a00,stroke:#555500,stroke-width:1px,color:#888844
+    style A6 fill:#1a1a00,stroke:#555500,stroke-width:1px,color:#888844
+    style A7 fill:#1a1a00,stroke:#555500,stroke-width:1px,color:#888844
+    style F fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+        </pre>
+      </div>
+    </div>
+
+    <div class="sw-row">
+      <div class="sw-item strength">
+        <div class="sw-label">+ Strength</div>
+        <div class="sw-text">Explores multiple reasoning paths. Finds non-obvious angles. Scored pruning prevents wasted effort.</div>
+      </div>
+      <div class="sw-item weakness">
+        <div class="sw-label">- Weakness</div>
+        <div class="sw-text">Very slow: ~14+ LLM calls minimum. High token cost. Scoring can be inconsistent.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     STRATEGY 4: ReAct
+     ═══════════════════════════════════════════════════════════ -->
+<div class="strategy-card" id="s4">
+  <div class="card-titlebar">
+    <span class="titlebar-dot dot-red"></span>
+    <span class="titlebar-dot dot-yellow"></span>
+    <span class="titlebar-dot dot-green"></span>
+    <span class="titlebar-text">04 // ReAct (Reasoning + Acting)</span>
+    <span class="titlebar-index">strategy_react.py</span>
+  </div>
+  <div class="card-body">
+    <div class="card-meta">
+      <div class="meta-item">
+        <div class="meta-label">Pattern</div>
+        <div class="meta-value">Thought-Action-Observation loop</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Max Cycles</div>
+        <div class="meta-value">5</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Available Tools</div>
+        <div class="meta-value cyan">calculate[], web_search[], search[]</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Stop Token</div>
+        <div class="meta-value amber">stop=["Observation:"]</div>
+      </div>
+    </div>
+
+    <div class="flow-section">
+      <div class="flow-label">Prompt Template</div>
+      <div class="prompt-block"><span class="keyword">system</span> = <span class="string">"""You have access to these tools:
+  calculate[expression] - evaluate math
+  web_search[query]     - search the web
+  search[query]         - search local knowledge base
+
+Format:
+  Thought: your reasoning
+  Action: tool_name[input]
+  Observation: (filled by system — DO NOT generate)
+  ... repeat ...
+  Final Answer: your answer"""</span>
+
+<span class="comment"># Key: stop=["Observation:"] prevents LLM from hallucinating tool results</span></div>
+    </div>
+
+    <div class="flow-section">
+      <div class="flow-label">Execution Flow</div>
+      <div class="mermaid-wrapper">
+        <pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#003300', 'primaryTextColor': '#00ff41', 'primaryBorderColor': '#00ff41', 'lineColor': '#39ff14', 'secondaryColor': '#0a3d0a', 'tertiaryColor': '#0a0a0a', 'edgeLabelBackground': '#0a0a0a' }}}%%
+graph TD
+    Q["<b>QUERY</b>"] --> T1["<b>Thought 1</b><br/>I need to understand<br/>Oracle's vector capabilities"]
+    T1 --> A1["<b>Action</b><br/>search[Oracle AI<br/>Vector Search features]"]
+    A1 --> O1["<b>Observation</b><br/>(system returns results)"]
+    O1 --> T2["<b>Thought 2</b><br/>Now I need RAG-specific<br/>advantages"]
+    T2 --> A2["<b>Action</b><br/>search[Oracle vector<br/>search RAG benefits]"]
+    A2 --> O2["<b>Observation</b><br/>(system returns results)"]
+    O2 --> T3["<b>Thought 3</b><br/>I have enough context<br/>to answer"]
+    T3 --> F["<b>Final Answer</b>"]
+    style Q fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+    style T1 fill:#0a3d0a,stroke:#39ff14,stroke-width:1px,color:#39ff14
+    style T2 fill:#0a3d0a,stroke:#39ff14,stroke-width:1px,color:#39ff14
+    style T3 fill:#0a3d0a,stroke:#39ff14,stroke-width:1px,color:#39ff14
+    style A1 fill:#1a1a00,stroke:#ffb000,stroke-width:1px,color:#ffb000
+    style A2 fill:#1a1a00,stroke:#ffb000,stroke-width:1px,color:#ffb000
+    style O1 fill:#001a1a,stroke:#00ffcc,stroke-width:1px,color:#00ffcc
+    style O2 fill:#001a1a,stroke:#00ffcc,stroke-width:1px,color:#00ffcc
+    style F fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+        </pre>
+      </div>
+    </div>
+
+    <div class="flow-section">
+      <div class="flow-label">Example Trace</div>
+      <div class="trace-block">
+        <div class="trace-step"><span class="trace-label">Thought 1</span> <span class="trace-arrow">──&gt;</span> <span class="trace-content">I should search for Oracle AI Vector Search capabilities to understand the technical features.</span></div>
+        <div class="trace-step"><span class="trace-label">Action  </span> <span class="trace-arrow">──&gt;</span> <span class="trace-content">search[Oracle AI Vector Search features and capabilities]</span></div>
+        <div class="trace-step"><span class="trace-label">Observe </span> <span class="trace-arrow">──&gt;</span> <span class="trace-content">Oracle AI Vector Search supports HNSW and IVF indexes, stores vectors alongside relational data, uses SQL for queries...</span></div>
+        <div class="trace-step"><span class="trace-label">Thought 2</span> <span class="trace-arrow">──&gt;</span> <span class="trace-content">Now I need to understand how these features specifically benefit RAG architectures.</span></div>
+        <div class="trace-step"><span class="trace-label">Action  </span> <span class="trace-arrow">──&gt;</span> <span class="trace-content">search[RAG architecture requirements vector database]</span></div>
+        <div class="trace-step"><span class="trace-label">Observe </span> <span class="trace-arrow">──&gt;</span> <span class="trace-content">RAG requires: fast similarity search, metadata filtering, consistency, scalable storage...</span></div>
+        <div class="trace-step"><span class="trace-label">Thought 3</span> <span class="trace-arrow">──&gt;</span> <span class="trace-content">I can now synthesize both to provide a comprehensive answer about Oracle AI Vector Search advantages for RAG.</span></div>
+        <div class="trace-step"><span class="trace-label">Final   </span> <span class="trace-arrow">──&gt;</span> <span class="trace-content">Key advantages: unified storage eliminates ETL, ACID compliance ensures consistency, SQL-based hybrid search...</span></div>
+      </div>
+    </div>
+
+    <div class="sw-row">
+      <div class="sw-item strength">
+        <div class="sw-label">+ Strength</div>
+        <div class="sw-text">Can use external tools for grounded answers. Stop token prevents hallucinated observations.</div>
+      </div>
+      <div class="sw-item weakness">
+        <div class="sw-label">- Weakness</div>
+        <div class="sw-text">Tool reliability is a single point of failure. Unpredictable cycle count.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     STRATEGY 5: SELF-REFLECTION
+     ═══════════════════════════════════════════════════════════ -->
+<div class="strategy-card" id="s5">
+  <div class="card-titlebar">
+    <span class="titlebar-dot dot-red"></span>
+    <span class="titlebar-dot dot-yellow"></span>
+    <span class="titlebar-dot dot-green"></span>
+    <span class="titlebar-text">05 // SELF-REFLECTION</span>
+    <span class="titlebar-index">strategy_self_reflection.py</span>
+  </div>
+  <div class="card-body">
+    <div class="card-meta">
+      <div class="meta-item">
+        <div class="meta-label">Pattern</div>
+        <div class="meta-value">Draft &rarr; Critique &rarr; Refine loop</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Max Iterations</div>
+        <div class="meta-value">5</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Exit Condition</div>
+        <div class="meta-value cyan">"CORRECT" in critique.upper() and len(critique) &lt; 20</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">LLM Calls</div>
+        <div class="meta-value amber">2-10 (draft + critique per iter)</div>
+      </div>
+    </div>
+
+    <div class="flow-section">
+      <div class="flow-label">Prompt Template</div>
+      <div class="prompt-block"><span class="comment"># Phase 1: Generate draft</span>
+<span class="keyword">draft_prompt</span> = <span class="string">f"Answer this question: {query}"</span>
+
+<span class="comment"># Phase 2: Critique the draft</span>
+<span class="keyword">critique_prompt</span> = <span class="string">f"""Review this answer:
+{draft}
+
+Is this answer CORRECT and COMPLETE?
+If not, explain what's wrong or missing."""</span>
+
+<span class="comment"># Exit check: short "CORRECT" response means approval</span>
+<span class="keyword">if</span> <span class="string">"CORRECT"</span> <span class="keyword">in</span> critique.upper() <span class="keyword">and</span> len(critique) < 20:
+    <span class="keyword">break</span>  <span class="comment"># Accept the draft</span>
+
+<span class="comment"># Phase 3: Refine using critique</span>
+<span class="keyword">refine_prompt</span> = <span class="string">f"Improve this answer based on the critique:\n{draft}\nCritique: {critique}"</span></div>
+    </div>
+
+    <div class="flow-section">
+      <div class="flow-label">Execution Flow</div>
+      <div class="mermaid-wrapper">
+        <pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#003300', 'primaryTextColor': '#00ff41', 'primaryBorderColor': '#00ff41', 'lineColor': '#39ff14', 'secondaryColor': '#0a3d0a', 'tertiaryColor': '#0a0a0a', 'edgeLabelBackground': '#0a0a0a' }}}%%
+graph TD
+    Q["<b>QUERY</b>"] --> D1["<b>Draft v1</b><br/>Initial answer"]
+    D1 --> C1{"<b>Critique</b><br/>CORRECT?"}
+    C1 -->|"NO: missing<br/>security aspects"| R1["<b>Refine v2</b><br/>Add security<br/>details"]
+    R1 --> C2{"<b>Critique</b><br/>CORRECT?"}
+    C2 -->|"NO: missing<br/>cost comparison"| R2["<b>Refine v3</b><br/>Add cost<br/>analysis"]
+    R2 --> C3{"<b>Critique</b><br/>CORRECT?"}
+    C3 -->|"YES"| F["<b>FINAL ANSWER</b><br/>Refined v3 accepted"]
+    style Q fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+    style D1 fill:#0a3d0a,stroke:#39ff14,stroke-width:1px,color:#39ff14
+    style C1 fill:#1a1a00,stroke:#ffb000,stroke-width:1px,color:#ffb000
+    style C2 fill:#1a1a00,stroke:#ffb000,stroke-width:1px,color:#ffb000
+    style C3 fill:#1a1a00,stroke:#ffb000,stroke-width:1px,color:#ffb000
+    style R1 fill:#0a3d0a,stroke:#39ff14,stroke-width:1px,color:#39ff14
+    style R2 fill:#0a3d0a,stroke:#39ff14,stroke-width:1px,color:#39ff14
+    style F fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+        </pre>
+      </div>
+    </div>
+
+    <div class="sw-row">
+      <div class="sw-item strength">
+        <div class="sw-label">+ Strength</div>
+        <div class="sw-text">Self-correcting. Each iteration improves on identified flaws. Converges toward completeness.</div>
+      </div>
+      <div class="sw-item weakness">
+        <div class="sw-label">- Weakness</div>
+        <div class="sw-text">May loop without real improvement. Critique quality is itself LLM-dependent. 2x calls per iteration.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     STRATEGY 6: SELF-CONSISTENCY
+     ═══════════════════════════════════════════════════════════ -->
+<div class="strategy-card" id="s6">
+  <div class="card-titlebar">
+    <span class="titlebar-dot dot-red"></span>
+    <span class="titlebar-dot dot-yellow"></span>
+    <span class="titlebar-dot dot-green"></span>
+    <span class="titlebar-text">06 // SELF-CONSISTENCY</span>
+    <span class="titlebar-index">strategy_self_consistency.py</span>
+  </div>
+  <div class="card-body">
+    <div class="card-meta">
+      <div class="meta-item">
+        <div class="meta-label">Pattern</div>
+        <div class="meta-value">Multiple samples + majority vote</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Config</div>
+        <div class="meta-value">k=5, temperature=0.7</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Answer Regex</div>
+        <div class="meta-value cyan">r"Final Answer:\s*(.*)"</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Selection</div>
+        <div class="meta-value">collections.Counter majority</div>
+      </div>
+    </div>
+
+    <div class="flow-section">
+      <div class="flow-label">Prompt Template</div>
+      <div class="prompt-block"><span class="comment"># Same prompt sent k=5 times at temperature=0.7</span>
+<span class="keyword">prompt</span> = <span class="string">f"""Think step-by-step about this question.
+After reasoning, state your answer as: Final Answer: [your answer]
+
+Question: {query}"""</span>
+
+<span class="comment"># Extract from each sample</span>
+answers = []
+<span class="keyword">for</span> response <span class="keyword">in</span> samples:
+    match = re.search(<span class="regex-pat">r"Final Answer:\s*(.*)"</span>, response)
+    <span class="keyword">if</span> match:
+        answers.append(match.group(1).strip())
+
+<span class="comment"># Majority vote</span>
+winner = Counter(answers).most_common(1)[0][0]</div>
+    </div>
+
+    <div class="flow-section">
+      <div class="flow-label">Execution Flow</div>
+      <div class="mermaid-wrapper">
+        <pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#003300', 'primaryTextColor': '#00ff41', 'primaryBorderColor': '#00ff41', 'lineColor': '#39ff14', 'secondaryColor': '#0a3d0a', 'tertiaryColor': '#0a0a0a', 'edgeLabelBackground': '#0a0a0a' }}}%%
+graph TD
+    Q["<b>QUERY</b>"] --> S1["<b>Sample 1</b><br/>t=0.7<br/><i>Unified storage</i>"]
+    Q --> S2["<b>Sample 2</b><br/>t=0.7<br/><i>SQL integration</i>"]
+    Q --> S3["<b>Sample 3</b><br/>t=0.7<br/><i>Unified storage</i>"]
+    Q --> S4["<b>Sample 4</b><br/>t=0.7<br/><i>Unified storage</i>"]
+    Q --> S5["<b>Sample 5</b><br/>t=0.7<br/><i>ACID compliance</i>"]
+    S1 --> V["<b>MAJORITY VOTE</b><br/>Counter analysis"]
+    S2 --> V
+    S3 --> V
+    S4 --> V
+    S5 --> V
+    V --> F["<b>WINNER</b><br/>Unified storage (3/5)"]
+    style Q fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+    style S1 fill:#0a3d0a,stroke:#39ff14,stroke-width:1px,color:#39ff14
+    style S2 fill:#0a3d0a,stroke:#39ff14,stroke-width:1px,color:#39ff14
+    style S3 fill:#0a3d0a,stroke:#39ff14,stroke-width:1px,color:#39ff14
+    style S4 fill:#0a3d0a,stroke:#39ff14,stroke-width:1px,color:#39ff14
+    style S5 fill:#0a3d0a,stroke:#39ff14,stroke-width:1px,color:#39ff14
+    style V fill:#1a1a00,stroke:#ffb000,stroke-width:1px,color:#ffb000
+    style F fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+        </pre>
+      </div>
+    </div>
+
+    <div class="sw-row">
+      <div class="sw-item strength">
+        <div class="sw-label">+ Strength</div>
+        <div class="sw-text">Robust to randomness. Statistical consensus. Parallelizable for speed.</div>
+      </div>
+      <div class="sw-item weakness">
+        <div class="sw-label">- Weakness</div>
+        <div class="sw-text">5x token cost. All samples may converge on same wrong answer. Majority != correctness.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     STRATEGY 7: DECOMPOSED
+     ═══════════════════════════════════════════════════════════ -->
+<div class="strategy-card" id="s7">
+  <div class="card-titlebar">
+    <span class="titlebar-dot dot-red"></span>
+    <span class="titlebar-dot dot-yellow"></span>
+    <span class="titlebar-dot dot-green"></span>
+    <span class="titlebar-text">07 // DECOMPOSED</span>
+    <span class="titlebar-index">strategy_decomposed.py</span>
+  </div>
+  <div class="card-body">
+    <div class="card-meta">
+      <div class="meta-item">
+        <div class="meta-label">Pattern</div>
+        <div class="meta-value">Decompose &rarr; Solve each &rarr; Synthesize</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Depth</div>
+        <div class="meta-value">N sub-tasks + 1 synthesis</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Context Passing</div>
+        <div class="meta-value cyan">Cumulative (each task sees prior results)</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">LLM Calls</div>
+        <div class="meta-value amber">N + 2 (decompose + N solve + synthesize)</div>
+      </div>
+    </div>
+
+    <div class="flow-section">
+      <div class="flow-label">Prompt Template</div>
+      <div class="prompt-block"><span class="comment"># Phase 1: Decompose into sub-tasks</span>
+<span class="keyword">decompose_prompt</span> = <span class="string">f"""Break this question into smaller sub-tasks.
+List each as a numbered task.
+
+Question: {query}"""</span>
+
+<span class="comment"># Phase 2: Solve each sub-task (with context from prior tasks)</span>
+<span class="keyword">for</span> i, task <span class="keyword">in</span> enumerate(sub_tasks):
+    context = <span class="string">"\n"</span>.join(prior_results)
+    <span class="keyword">solve_prompt</span> = <span class="string">f"""Context from prior tasks:
+{context}
+
+Now solve: {task}"""</span>
+
+<span class="comment"># Phase 3: Synthesize all results</span>
+<span class="keyword">synth_prompt</span> = <span class="string">f"""Based on these sub-task results:
+{all_results}
+
+Provide a comprehensive answer to: {query}"""</span></div>
+    </div>
+
+    <div class="flow-section">
+      <div class="flow-label">Execution Flow</div>
+      <div class="mermaid-wrapper">
+        <pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#003300', 'primaryTextColor': '#00ff41', 'primaryBorderColor': '#00ff41', 'lineColor': '#39ff14', 'secondaryColor': '#0a3d0a', 'tertiaryColor': '#0a0a0a', 'edgeLabelBackground': '#0a0a0a' }}}%%
+graph TD
+    Q["<b>QUERY</b>"] --> D["<b>DECOMPOSE</b><br/>Break into sub-tasks"]
+    D --> T1["<b>Task 1</b><br/>What is Oracle AI<br/>Vector Search?"]
+    D --> T2["<b>Task 2</b><br/>What does RAG<br/>require?"]
+    D --> T3["<b>Task 3</b><br/>What are the<br/>advantages?"]
+    T1 -->|"result 1"| T2
+    T2 -->|"result 1+2"| T3
+    T3 --> S["<b>SYNTHESIZE</b><br/>Combine all results<br/>into final answer"]
+    S --> F["<b>FINAL ANSWER</b>"]
+    style Q fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+    style D fill:#1a1a00,stroke:#ffb000,stroke-width:1px,color:#ffb000
+    style T1 fill:#0a3d0a,stroke:#39ff14,stroke-width:1px,color:#39ff14
+    style T2 fill:#0a3d0a,stroke:#39ff14,stroke-width:1px,color:#39ff14
+    style T3 fill:#0a3d0a,stroke:#39ff14,stroke-width:1px,color:#39ff14
+    style S fill:#001a1a,stroke:#00ffcc,stroke-width:1px,color:#00ffcc
+    style F fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+        </pre>
+      </div>
+    </div>
+
+    <div class="sw-row">
+      <div class="sw-item strength">
+        <div class="sw-label">+ Strength</div>
+        <div class="sw-text">Handles complex multi-part queries. Each sub-task gets focused attention. Context accumulates.</div>
+      </div>
+      <div class="sw-item weakness">
+        <div class="sw-label">- Weakness</div>
+        <div class="sw-text">Decomposition quality is critical. Bad split = bad final answer. Extra LLM call overhead.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     STRATEGY 8: LEAST-TO-MOST
+     ═══════════════════════════════════════════════════════════ -->
+<div class="strategy-card" id="s8">
+  <div class="card-titlebar">
+    <span class="titlebar-dot dot-red"></span>
+    <span class="titlebar-dot dot-yellow"></span>
+    <span class="titlebar-dot dot-green"></span>
+    <span class="titlebar-text">08 // LEAST-TO-MOST</span>
+    <span class="titlebar-index">strategy_least_to_most.py</span>
+  </div>
+  <div class="card-body">
+    <div class="card-meta">
+      <div class="meta-item">
+        <div class="meta-label">Pattern</div>
+        <div class="meta-value">Easy &rarr; Hard with accumulation</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Depth</div>
+        <div class="meta-value">N sub-questions</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Key Difference</div>
+        <div class="meta-value amber">No explicit synthesis; last answer = final answer</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">LLM Calls</div>
+        <div class="meta-value">N + 1 (decompose + N answers)</div>
+      </div>
+    </div>
+
+    <div class="flow-section">
+      <div class="flow-label">Prompt Template</div>
+      <div class="prompt-block"><span class="comment"># Phase 1: Generate ordered sub-questions (easy to hard)</span>
+<span class="keyword">decompose_prompt</span> = <span class="string">f"""Break this into sub-questions ordered from
+simplest to most complex:
+
+Question: {query}"""</span>
+
+<span class="comment"># Phase 2: Solve in order, each seeing previous answers</span>
+accumulated = []
+<span class="keyword">for</span> q <span class="keyword">in</span> ordered_sub_questions:
+    context = <span class="string">"\n"</span>.join(accumulated)
+    <span class="keyword">solve_prompt</span> = <span class="string">f"""Previously answered:
+{context}
+
+Now answer: {q}"""</span>
+    accumulated.append(answer)
+
+<span class="comment"># The LAST answer IS the final answer (no separate synthesis)</span>
+final_answer = accumulated[-1]</div>
+    </div>
+
+    <div class="flow-section">
+      <div class="flow-label">Execution Flow</div>
+      <div class="mermaid-wrapper">
+        <pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#003300', 'primaryTextColor': '#00ff41', 'primaryBorderColor': '#00ff41', 'lineColor': '#39ff14', 'secondaryColor': '#0a3d0a', 'tertiaryColor': '#0a0a0a', 'edgeLabelBackground': '#0a0a0a' }}}%%
+graph LR
+    Q["<b>QUERY</b>"] --> D["<b>DECOMPOSE</b><br/>Order by difficulty"]
+    D --> E1["<b>EASY</b><br/>What is vector<br/>search?"]
+    E1 -->|"+ answer 1"| E2["<b>MEDIUM</b><br/>What is RAG<br/>architecture?"]
+    E2 -->|"+ answer 1,2"| E3["<b>HARD</b><br/>How does Oracle<br/>vector search help<br/>RAG specifically?"]
+    E3 -->|"+ answer 1,2,3"| E4["<b>HARDEST</b><br/>What unique advantages<br/>does it have over<br/>alternatives?"]
+    E4 --> F["<b>FINAL</b><br/>= Last answer"]
+    style Q fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+    style D fill:#1a1a00,stroke:#ffb000,stroke-width:1px,color:#ffb000
+    style E1 fill:#0a3d0a,stroke:#39ff14,stroke-width:1px,color:#39ff14
+    style E2 fill:#0a3d0a,stroke:#39ff14,stroke-width:1px,color:#39ff14
+    style E3 fill:#0a3d0a,stroke:#39ff14,stroke-width:1px,color:#39ff14
+    style E4 fill:#003300,stroke:#00ff41,stroke-width:1px,color:#00ff41
+    style F fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+        </pre>
+      </div>
+    </div>
+
+    <div class="flow-section">
+      <div class="flow-label">Example Trace</div>
+      <div class="trace-block">
+        <div class="trace-step"><span class="trace-label">Q1 [EASY]  </span> <span class="trace-arrow">──&gt;</span> <span class="trace-content">"What is vector search?" &rarr; A technique for finding similar items using vector embeddings...</span></div>
+        <div class="trace-step"><span class="trace-label">Q2 [MED]   </span> <span class="trace-arrow">──&gt;</span> <span class="trace-content">"What is RAG?" &rarr; (using Q1 answer) RAG retrieves relevant vectors then generates augmented responses...</span></div>
+        <div class="trace-step"><span class="trace-label">Q3 [HARD]  </span> <span class="trace-arrow">──&gt;</span> <span class="trace-content">"How does Oracle help RAG?" &rarr; (using Q1+Q2) Oracle embeds vector search inside the DB, eliminating separate vector stores...</span></div>
+        <div class="trace-step"><span class="trace-label">Q4 [FINAL] </span> <span class="trace-arrow">──&gt;</span> <span class="trace-content">"What unique advantages?" &rarr; (using all) ACID transactions on vectors, SQL hybrid search, enterprise security, zero ETL pipeline...</span></div>
+      </div>
+    </div>
+
+    <div class="sw-row">
+      <div class="sw-item strength">
+        <div class="sw-label">+ Strength</div>
+        <div class="sw-text">Progressive understanding. Simple concepts scaffold complex ones. Natural learning order.</div>
+      </div>
+      <div class="sw-item weakness">
+        <div class="sw-label">- Weakness</div>
+        <div class="sw-text">Ordering quality matters critically. If difficulty ranking is wrong, the chain degrades.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     STRATEGY 9: RECURSIVE
+     ═══════════════════════════════════════════════════════════ -->
+<div class="strategy-card" id="s9">
+  <div class="card-titlebar">
+    <span class="titlebar-dot dot-red"></span>
+    <span class="titlebar-dot dot-yellow"></span>
+    <span class="titlebar-dot dot-green"></span>
+    <span class="titlebar-text">09 // RECURSIVE (Code Generation)</span>
+    <span class="titlebar-index">strategy_recursive.py</span>
+  </div>
+  <div class="card-body">
+    <div class="card-meta">
+      <div class="meta-item">
+        <div class="meta-label">Pattern</div>
+        <div class="meta-value">Python code gen + exec()</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Max Steps</div>
+        <div class="meta-value red">8</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Code Regex</div>
+        <div class="meta-value cyan">r"```python(.*?)```"</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Env Tools</div>
+        <div class="meta-value">INPUT, sub_llm(), print, len, range</div>
+      </div>
+    </div>
+
+    <div class="flow-section">
+      <div class="flow-label">Prompt Template</div>
+      <div class="prompt-block"><span class="keyword">system</span> = <span class="string">"""You are a Python code generator. To answer questions,
+write Python code that will be executed.
+
+Available in your environment:
+  INPUT       - the user's question (str)
+  sub_llm(p)  - call an LLM with prompt p, returns str
+  print()     - output observations
+  len, range  - standard builtins
+
+When done, set: FINAL_ANSWER = "your answer"
+
+Write code in ```python ... ``` blocks."""</span>
+
+<span class="comment"># Code extraction</span>
+code = re.search(<span class="regex-pat">r"```python(.*?)```"</span>, response, re.DOTALL).group(1)
+
+<span class="comment"># Sandboxed execution</span>
+env = {<span class="string">"INPUT"</span>: query, <span class="string">"sub_llm"</span>: sub_llm_fn, <span class="string">"print"</span>: capture_print, ...}
+exec(code, env)
+
+<span class="comment"># Check for termination</span>
+<span class="keyword">if</span> <span class="string">"FINAL_ANSWER"</span> <span class="keyword">in</span> env:
+    <span class="keyword">return</span> env[<span class="string">"FINAL_ANSWER"</span>]
+<span class="comment"># Otherwise: feed observation back, generate more code</span></div>
+    </div>
+
+    <div class="flow-section">
+      <div class="flow-label">Execution Flow</div>
+      <div class="mermaid-wrapper">
+        <pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#003300', 'primaryTextColor': '#00ff41', 'primaryBorderColor': '#00ff41', 'lineColor': '#39ff14', 'secondaryColor': '#0a3d0a', 'tertiaryColor': '#0a0a0a', 'edgeLabelBackground': '#0a0a0a' }}}%%
+graph TD
+    Q["<b>QUERY</b>"] --> G1["<b>Generate Code 1</b><br/>aspects = sub_llm(...)"]
+    G1 --> X1["<b>exec()</b><br/>Run Python code"]
+    X1 --> O1["<b>Observation</b><br/>print output captured"]
+    O1 --> G2["<b>Generate Code 2</b><br/>details = sub_llm(...)<br/>for aspect in aspects"]
+    G2 --> X2["<b>exec()</b><br/>Run Python code"]
+    X2 --> O2["<b>Observation</b><br/>detailed results"]
+    O2 --> G3["<b>Generate Code 3</b><br/>FINAL_ANSWER = ..."]
+    G3 --> X3["<b>exec()</b><br/>Run Python code"]
+    X3 --> F["<b>FINAL_ANSWER</b><br/>extracted from env"]
+    style Q fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+    style G1 fill:#0a3d0a,stroke:#39ff14,stroke-width:1px,color:#39ff14
+    style G2 fill:#0a3d0a,stroke:#39ff14,stroke-width:1px,color:#39ff14
+    style G3 fill:#0a3d0a,stroke:#39ff14,stroke-width:1px,color:#39ff14
+    style X1 fill:#1a0000,stroke:#ff3333,stroke-width:1px,color:#ff3333
+    style X2 fill:#1a0000,stroke:#ff3333,stroke-width:1px,color:#ff3333
+    style X3 fill:#1a0000,stroke:#ff3333,stroke-width:1px,color:#ff3333
+    style O1 fill:#001a1a,stroke:#00ffcc,stroke-width:1px,color:#00ffcc
+    style O2 fill:#001a1a,stroke:#00ffcc,stroke-width:1px,color:#00ffcc
+    style F fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+        </pre>
+      </div>
+    </div>
+
+    <div class="flow-section">
+      <div class="flow-label">Example Generated Code</div>
+      <div class="prompt-block"><span class="comment"># Step 1: Decompose the question programmatically</span>
+aspects = sub_llm(<span class="string">"List 5 key aspects of Oracle AI Vector Search for RAG. One per line."</span>)
+aspect_list = [a.strip() <span class="keyword">for</span> a <span class="keyword">in</span> aspects.split(<span class="string">"\n"</span>) <span class="keyword">if</span> a.strip()]
+print(<span class="string">f"Found {len(aspect_list)} aspects"</span>)
+
+<span class="comment"># Step 2: Deep-dive each aspect</span>
+results = []
+<span class="keyword">for</span> aspect <span class="keyword">in</span> aspect_list:
+    detail = sub_llm(<span class="string">f"Explain how '{aspect}' benefits RAG applications. 2-3 sentences."</span>)
+    results.append(<span class="string">f"<b>{aspect}</b>: {detail}"</span>)
+
+<span class="comment"># Step 3: Compose final answer</span>
+FINAL_ANSWER = <span class="string">"\n\n"</span>.join(results)</div>
+    </div>
+
+    <div class="sw-row">
+      <div class="sw-item strength">
+        <div class="sw-label">+ Strength</div>
+        <div class="sw-text">Can compute, iterate, branch. Full programming logic. Can call sub-LLMs in loops.</div>
+      </div>
+      <div class="sw-item weakness">
+        <div class="sw-label">- Weakness</div>
+        <div class="sw-text">Code safety (exec is dangerous). High complexity. Generated code may have bugs or infinite loops.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     RADAR CHART: COMPARATIVE ANALYSIS
+     ═══════════════════════════════════════════════════════════ -->
+<div class="box-divider">─────────────────── ┤ RADAR ANALYSIS ├ ───────────────────</div>
+
+<section class="radar-section" id="radar">
+  <h2 class="section-header">Multi-Axis Comparison</h2>
+  <p style="color: var(--text-dim); font-size: 11px; margin-bottom: 20px;">
+    ├── Axes: Speed (10=fastest), Depth (10=deepest reasoning), Accuracy (10=highest expected),
+    Cost (10=cheapest), Explainability (10=most transparent)
+  </p>
+
+  <div class="radar-container">
+    <canvas id="radarChart"></canvas>
+  </div>
+
+  <div class="radar-legend" id="radarLegend"></div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     STRATEGY SELECTION GUIDE
+     ═══════════════════════════════════════════════════════════ -->
+<div class="box-divider">─────────────────── ┤ DECISION MATRIX ├ ───────────────────</div>
+
+<section class="strategy-card">
+  <div class="card-titlebar">
+    <span class="titlebar-dot dot-red"></span>
+    <span class="titlebar-dot dot-yellow"></span>
+    <span class="titlebar-dot dot-green"></span>
+    <span class="titlebar-text">STRATEGY SELECTION // DECISION TREE</span>
+    <span class="titlebar-index">selector.py</span>
+  </div>
+  <div class="card-body">
+    <div class="flow-section">
+      <div class="flow-label">When to use which strategy</div>
+      <div class="mermaid-wrapper">
+        <pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#003300', 'primaryTextColor': '#00ff41', 'primaryBorderColor': '#00ff41', 'lineColor': '#39ff14', 'secondaryColor': '#0a3d0a', 'tertiaryColor': '#0a0a0a', 'edgeLabelBackground': '#0a0a0a' }}}%%
+graph TD
+    START["<b>INCOMING QUERY</b>"] --> Q1{"Need external<br/>data/tools?"}
+    Q1 -->|"YES"| REACT["<b>ReAct</b><br/>Tool-augmented"]
+    Q1 -->|"NO"| Q2{"Simple<br/>factual?"}
+    Q2 -->|"YES"| STD["<b>Standard</b><br/>Direct call"]
+    Q2 -->|"NO"| Q3{"Need high<br/>accuracy?"}
+    Q3 -->|"YES"| Q4{"Budget for<br/>5x calls?"}
+    Q4 -->|"YES"| SC["<b>Self-Consistency</b><br/>Majority vote"]
+    Q4 -->|"NO"| SR["<b>Self-Reflection</b><br/>Draft + Refine"]
+    Q3 -->|"NO"| Q5{"Multi-part<br/>question?"}
+    Q5 -->|"YES"| Q6{"Need synthesis<br/>step?"}
+    Q6 -->|"YES"| DEC["<b>Decomposed</b><br/>Split + Merge"]
+    Q6 -->|"NO"| LTM["<b>Least-to-Most</b><br/>Easy to Hard"]
+    Q5 -->|"NO"| Q7{"Need to explore<br/>alternatives?"}
+    Q7 -->|"YES"| TOT["<b>Tree of Thoughts</b><br/>BFS + Prune"]
+    Q7 -->|"NO"| Q8{"Need<br/>computation?"}
+    Q8 -->|"YES"| REC["<b>Recursive</b><br/>Code Gen"]
+    Q8 -->|"NO"| COT["<b>Chain-of-Thought</b><br/>Step-by-step"]
+    style START fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+    style Q1 fill:#1a1a00,stroke:#ffb000,stroke-width:1px,color:#ffb000
+    style Q2 fill:#1a1a00,stroke:#ffb000,stroke-width:1px,color:#ffb000
+    style Q3 fill:#1a1a00,stroke:#ffb000,stroke-width:1px,color:#ffb000
+    style Q4 fill:#1a1a00,stroke:#ffb000,stroke-width:1px,color:#ffb000
+    style Q5 fill:#1a1a00,stroke:#ffb000,stroke-width:1px,color:#ffb000
+    style Q6 fill:#1a1a00,stroke:#ffb000,stroke-width:1px,color:#ffb000
+    style Q7 fill:#1a1a00,stroke:#ffb000,stroke-width:1px,color:#ffb000
+    style Q8 fill:#1a1a00,stroke:#ffb000,stroke-width:1px,color:#ffb000
+    style STD fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+    style COT fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+    style TOT fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+    style REACT fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+    style SR fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+    style SC fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+    style DEC fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+    style LTM fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+    style REC fill:#003300,stroke:#00ff41,stroke-width:2px,color:#00ff41
+        </pre>
+      </div>
+    </div>
+
+    <div class="flow-section">
+      <div class="flow-label">Quick Reference — Strategy Selector</div>
+      <div class="prompt-block"><span class="keyword">def</span> select_strategy(query_metadata):
+    <span class="string">"""Route queries to optimal reasoning strategy."""</span>
+
+    <span class="keyword">if</span> query_metadata.needs_tools:
+        <span class="keyword">return</span> <span class="string">"react"</span>           <span class="comment"># External data needed</span>
+
+    <span class="keyword">if</span> query_metadata.is_simple:
+        <span class="keyword">return</span> <span class="string">"standard"</span>        <span class="comment"># Don't overthink it</span>
+
+    <span class="keyword">if</span> query_metadata.accuracy_critical:
+        <span class="keyword">if</span> query_metadata.budget >= 5:
+            <span class="keyword">return</span> <span class="string">"self_consistency"</span>  <span class="comment"># k=5 majority vote</span>
+        <span class="keyword">return</span> <span class="string">"self_reflection"</span>     <span class="comment"># Draft-critique loop</span>
+
+    <span class="keyword">if</span> query_metadata.is_multi_part:
+        <span class="keyword">if</span> query_metadata.needs_synthesis:
+            <span class="keyword">return</span> <span class="string">"decomposed"</span>     <span class="comment"># Split-solve-merge</span>
+        <span class="keyword">return</span> <span class="string">"least_to_most"</span>      <span class="comment"># Progressive buildup</span>
+
+    <span class="keyword">if</span> query_metadata.explore_alternatives:
+        <span class="keyword">return</span> <span class="string">"tree_of_thoughts"</span>   <span class="comment"># BFS exploration</span>
+
+    <span class="keyword">if</span> query_metadata.needs_computation:
+        <span class="keyword">return</span> <span class="string">"recursive"</span>          <span class="comment"># Code generation</span>
+
+    <span class="keyword">return</span> <span class="string">"chain_of_thought"</span>      <span class="comment"># Default: step-by-step</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     FOOTER
+     ═══════════════════════════════════════════════════════════ -->
+<footer class="footer">
+  <div class="box-divider">┌──────────────────────────────────────────────────────────────────────┐</div>
+  <p>
+    <span class="highlight">agent-reasoning</span> // 9 strategies compared // generated 2026-02-27
+  </p>
+  <p style="margin-top: 4px;">
+    Query traced: <span class="highlight">"Oracle AI Vector Search for RAG"</span> // All strategies, one page.
+  </p>
+  <p style="margin-top: 8px; color: var(--text-ghost);">
+    ── Each strategy is a different lens on the same problem. Choose wisely. ──
+  </p>
+  <div class="box-divider">└──────────────────────────────────────────────────────────────────────┘</div>
+</footer>
+
+</div> <!-- end .container -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCRIPTS
+     ═══════════════════════════════════════════════════════════ -->
+<script>
+  // ── Initialize Mermaid with dark/green theme ──
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      darkMode: true,
+      primaryColor: '#003300',
+      primaryTextColor: '#00ff41',
+      primaryBorderColor: '#00ff41',
+      lineColor: '#39ff14',
+      secondaryColor: '#0a3d0a',
+      tertiaryColor: '#0a0a0a',
+      background: '#0a0a0a',
+      mainBkg: '#003300',
+      nodeBorder: '#00ff41',
+      clusterBkg: '#0d0d0d',
+      clusterBorder: '#00ff41',
+      titleColor: '#00ff41',
+      edgeLabelBackground: '#0a0a0a',
+      nodeTextColor: '#00ff41',
+    },
+    flowchart: {
+      htmlLabels: true,
+      curve: 'basis',
+      padding: 12,
+      nodeSpacing: 40,
+      rankSpacing: 50,
+    },
+    fontFamily: 'JetBrains Mono, monospace',
+    fontSize: 11,
+  });
+
+  // ── Radar Chart ──
+  document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('radarChart').getContext('2d');
+
+    const strategies = [
+      { name: 'Standard',          color: '#00ff41', data: [10, 1, 5, 10, 2] },
+      { name: 'Chain-of-Thought',  color: '#39ff14', data: [9,  5, 7,  9, 9] },
+      { name: 'Tree of Thoughts',  color: '#ffb000', data: [2,  9, 8,  2, 7] },
+      { name: 'ReAct',             color: '#ff6600', data: [5,  6, 8,  5, 8] },
+      { name: 'Self-Reflection',   color: '#ff3333', data: [4,  7, 9,  4, 7] },
+      { name: 'Self-Consistency',  color: '#00ffcc', data: [3,  5, 9,  2, 6] },
+      { name: 'Decomposed',        color: '#cc66ff', data: [4,  7, 8,  4, 8] },
+      { name: 'Least-to-Most',     color: '#6699ff', data: [5,  7, 7,  5, 8] },
+      { name: 'Recursive',         color: '#ff66cc', data: [2,  9, 7,  3, 5] },
+    ];
+
+    const datasets = strategies.map(s => ({
+      label: s.name,
+      data: s.data,
+      borderColor: s.color,
+      backgroundColor: s.color + '15',
+      borderWidth: 1.5,
+      pointRadius: 3,
+      pointBackgroundColor: s.color,
+      pointBorderColor: s.color,
+      pointHoverRadius: 5,
+    }));
+
+    new Chart(ctx, {
+      type: 'radar',
+      data: {
+        labels: ['Speed', 'Depth', 'Accuracy', 'Cost Efficiency', 'Explainability'],
+        datasets: datasets,
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        scales: {
+          r: {
+            beginAtZero: true,
+            max: 10,
+            ticks: {
+              stepSize: 2,
+              color: '#005511',
+              backdropColor: 'transparent',
+              font: { family: 'JetBrains Mono', size: 9 },
+            },
+            grid: {
+              color: 'rgba(0, 255, 65, 0.1)',
+              circular: true,
+            },
+            angleLines: {
+              color: 'rgba(0, 255, 65, 0.15)',
+            },
+            pointLabels: {
+              color: '#00ff41',
+              font: {
+                family: 'JetBrains Mono',
+                size: 11,
+                weight: '600',
+              },
+            },
+          },
+        },
+        plugins: {
+          legend: {
+            display: false,
+          },
+          tooltip: {
+            backgroundColor: '#0d0d0d',
+            borderColor: '#00ff41',
+            borderWidth: 1,
+            titleColor: '#00ff41',
+            bodyColor: '#00cc33',
+            titleFont: { family: 'JetBrains Mono', size: 11, weight: '600' },
+            bodyFont: { family: 'JetBrains Mono', size: 10 },
+            padding: 10,
+            cornerRadius: 0,
+          },
+        },
+        elements: {
+          line: {
+            tension: 0.1,
+          },
+        },
+      },
+    });
+
+    // Build custom legend
+    const legendEl = document.getElementById('radarLegend');
+    strategies.forEach(s => {
+      const item = document.createElement('div');
+      item.className = 'legend-item';
+      item.innerHTML = `<span class="legend-swatch" style="background: ${s.color}; box-shadow: 0 0 4px ${s.color};"></span>${s.name}`;
+      legendEl.appendChild(item);
+    });
+  });
+</script>
+
+</body>
+</html>

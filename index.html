@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentic RAG — Visual Explainers</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: #0a0a0f;
+    color: #e0e0e8;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+  .header {
+    text-align: center;
+    padding: 3rem 1rem 2rem;
+  }
+  .header h1 {
+    font-size: 2.5rem;
+    background: linear-gradient(135deg, #f97316, #ec4899, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.5rem;
+  }
+  .header p {
+    color: #888;
+    font-size: 1.1rem;
+  }
+  .badge {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 0.4rem 1rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: rgba(139, 92, 246, 0.15);
+    color: #a78bfa;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1.5rem;
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+  .card {
+    background: linear-gradient(145deg, #141420, #1a1a2e);
+    border: 1px solid #2a2a3e;
+    border-radius: 16px;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.3s, box-shadow 0.3s;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: #8b5cf6;
+    box-shadow: 0 12px 40px rgba(139, 92, 246, 0.15);
+  }
+  .card-body { padding: 1.5rem; }
+  .card h2 {
+    font-size: 1.15rem;
+    margin-bottom: 0.5rem;
+    color: #f0f0f8;
+  }
+  .card p {
+    font-size: 0.9rem;
+    color: #888;
+    line-height: 1.5;
+  }
+  .card .tag {
+    display: inline-block;
+    margin-top: 0.75rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .tag-diagram { background: rgba(249,115,22,0.15); color: #fb923c; }
+  .tag-slides { background: rgba(236,72,153,0.15); color: #f472b6; }
+  .tag-recap { background: rgba(59,130,246,0.15); color: #60a5fa; }
+  .tag-compare { background: rgba(16,185,129,0.15); color: #34d399; }
+  .footer {
+    text-align: center;
+    padding: 3rem 1rem 2rem;
+    color: #555;
+    font-size: 0.85rem;
+  }
+  .footer a { color: #8b5cf6; text-decoration: none; }
+  .footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>Agentic RAG Visual Explainers</h1>
+    <p>Interactive diagrams for Oracle AI Database + LangChain architecture</p>
+    <span class="badge">Oracle AI Vector Search</span>
+  </div>
+  <div class="grid">
+    <a class="card" href="agentic-rag-project-recap.html">
+      <div class="card-body">
+        <h2>Project Recap</h2>
+        <p>Full project overview — architecture, dependencies, API surface, and cognitive debt hotspots for the Agentic RAG system.</p>
+        <span class="tag tag-recap">Recap</span>
+      </div>
+    </a>
+    <a class="card" href="agent-reasoning-integration.html">
+      <div class="card-body">
+        <h2>Agent Reasoning Integration</h2>
+        <p>How the reasoning engine integrates with Oracle AI Database — dual-path routing, agent orchestration, and decision flow.</p>
+        <span class="tag tag-diagram">Diagram</span>
+      </div>
+    </a>
+    <a class="card" href="reasoning-strategies-compared.html">
+      <div class="card-body">
+        <h2>Reasoning Strategies Compared</h2>
+        <p>Side-by-side comparison of reasoning strategies — radar charts, performance metrics, and trade-off analysis.</p>
+        <span class="tag tag-compare">Comparison</span>
+      </div>
+    </a>
+    <a class="card" href="agentic-rag-slides.html">
+      <div class="card-body">
+        <h2>Agentic RAG Slide Deck (Gradient Noir)</h2>
+        <p>12-slide cinematic presentation — glassmorphism aesthetic with gradient text, Mermaid diagrams, and Chart.js visualizations.</p>
+        <span class="tag tag-slides">Slides</span>
+      </div>
+    </a>
+    <a class="card" href="agentic-rag-langchain-oracledb.html">
+      <div class="card-body">
+        <h2>Agentic RAG Slide Deck (Midnight Editorial)</h2>
+        <p>Original 12-slide deck — Oracle red/gold editorial style with architecture diagrams and code deep dives.</p>
+        <span class="tag tag-slides">Slides</span>
+      </div>
+    </a>
+    <a class="card" href="langchain-oracledb-architecture.html">
+      <div class="card-body">
+        <h2>LangChain + OracleDB Architecture</h2>
+        <p>Deep dive into the LangChain-OracleDB integration layer — component breakdown, data flow, and vector search pipeline.</p>
+        <span class="tag tag-diagram">Diagram</span>
+      </div>
+    </a>
+    <a class="card" href="document-to-answer-journey.html">
+      <div class="card-body">
+        <h2>Document-to-Answer Journey</h2>
+        <p>End-to-end visualization of how a document transforms into an answer through chunking, embedding, retrieval, and generation.</p>
+        <span class="tag tag-diagram">Diagram</span>
+      </div>
+    </a>
+  </div>
+  <div class="footer">
+    Built with <a href="https://github.com/jasperan">jasperan</a> &middot; Powered by Oracle AI Database
+  </div>
+</body>
+</html>

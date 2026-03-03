@@ -1,0 +1,1702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Reasoning Integration Blueprint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600&family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      primaryColor: '#0d3b3b',
+      primaryTextColor: '#e0f7f7',
+      primaryBorderColor: '#00e5ff',
+      lineColor: '#00e5ff',
+      secondaryColor: '#1a2e2e',
+      tertiaryColor: '#122424',
+      fontFamily: 'Inter, sans-serif',
+      fontSize: '13px',
+      noteBkgColor: '#1a2a1a',
+      noteTextColor: '#bfa76a',
+      noteBorderColor: '#bfa76a',
+      edgeLabelBackground: '#0a1a1a',
+      clusterBkg: '#0d2828',
+      clusterBorder: '#00e5ff44',
+      titleColor: '#00e5ff'
+    },
+    flowchart: { curve: 'basis', padding: 20 },
+    sequence: { actorMargin: 60, messageMargin: 40 },
+    class: { defaultRenderer: 'dagre-wrapper' }
+  });
+</script>
+<style>
+  :root {
+    --bg-primary: #0a1a1a;
+    --bg-secondary: #0d2222;
+    --bg-card: #0f2626;
+    --bg-code: #081414;
+    --accent-teal: #00e5ff;
+    --accent-teal-dim: #00e5ff44;
+    --accent-teal-glow: #00e5ff22;
+    --accent-gold: #bfa76a;
+    --accent-gold-dim: #bfa76a44;
+    --text-primary: #e8f0f0;
+    --text-secondary: #9ab8b8;
+    --text-dim: #5a7878;
+    --border-subtle: #1a3333;
+    --layer-foundation: #00e5ff;
+    --layer-integration: #bfa76a;
+    --layer-api: #ffffff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.7;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* --- Circuit Board SVG Background --- */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    opacity: 0.06;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cdefs%3E%3Cpattern id='circuit' x='0' y='0' width='100' height='100' patternUnits='userSpaceOnUse'%3E%3Cpath d='M10 10h20v0h10v20h0v10h-20v0h-10z' fill='none' stroke='%2300e5ff' stroke-width='0.5'/%3E%3Ccircle cx='10' cy='10' r='2' fill='%2300e5ff'/%3E%3Ccircle cx='40' cy='10' r='1.5' fill='%2300e5ff'/%3E%3Ccircle cx='40' cy='40' r='2' fill='%2300e5ff'/%3E%3Ccircle cx='10' cy='40' r='1.5' fill='%2300e5ff'/%3E%3Cpath d='M50 0v100M0 50h100' stroke='%2300e5ff' stroke-width='0.3'/%3E%3Cpath d='M60 20h20M80 20v30M80 50h-30M50 50v30' stroke='%2300e5ff' stroke-width='0.5'/%3E%3Ccircle cx='60' cy='20' r='1.5' fill='%2300e5ff'/%3E%3Ccircle cx='80' cy='50' r='2' fill='%2300e5ff'/%3E%3Ccircle cx='50' cy='80' r='1.5' fill='%2300e5ff'/%3E%3Cpath d='M70 70l15 15' stroke='%2300e5ff' stroke-width='0.4'/%3E%3Ccircle cx='85' cy='85' r='2' fill='%2300e5ff'/%3E%3Crect x='15' y='60' width='8' height='8' rx='1' fill='none' stroke='%2300e5ff' stroke-width='0.5'/%3E%3Crect x='70' y='5' width='6' height='6' rx='1' fill='none' stroke='%2300e5ff' stroke-width='0.5'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='400' height='400' fill='url(%23circuit)'/%3E%3C/svg%3E");
+  }
+
+  .page-wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 3rem 2rem 6rem;
+  }
+
+  /* --- Header --- */
+  .page-header {
+    text-align: center;
+    margin-bottom: 4rem;
+    padding-bottom: 3rem;
+    border-bottom: 1px solid var(--border-subtle);
+    position: relative;
+  }
+
+  .page-header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent-teal), transparent);
+  }
+
+  .header-label {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.75rem;
+    font-weight: 400;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent-teal);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  .header-label::before,
+  .header-label::after {
+    content: '';
+    width: 40px;
+    height: 1px;
+    background: var(--accent-teal-dim);
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+  }
+
+  h1 span {
+    color: var(--accent-teal);
+  }
+
+  .header-subtitle {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    font-weight: 300;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .header-meta {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 1.5rem;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+  }
+
+  .header-meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .header-meta .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .dot-teal { background: var(--accent-teal); }
+  .dot-gold { background: var(--accent-gold); }
+  .dot-white { background: var(--text-primary); }
+
+  /* --- Layer Sections --- */
+  .layer-section {
+    margin-bottom: 4rem;
+    position: relative;
+  }
+
+  .layer-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .layer-indicator {
+    width: 4px;
+    height: 48px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .layer-indicator.foundation { background: var(--layer-foundation); box-shadow: 0 0 12px var(--accent-teal-dim); }
+  .layer-indicator.integration { background: var(--layer-integration); box-shadow: 0 0 12px var(--accent-gold-dim); }
+  .layer-indicator.api { background: var(--layer-api); box-shadow: 0 0 12px rgba(255,255,255,0.15); }
+
+  .layer-title-group {
+    flex: 1;
+  }
+
+  .layer-number {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 0.15rem;
+  }
+
+  .layer-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .layer-title.foundation-text { color: var(--layer-foundation); }
+  .layer-title.integration-text { color: var(--layer-integration); }
+  .layer-title.api-text { color: var(--layer-api); }
+
+  .layer-badge {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.65rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 3px;
+    font-weight: 500;
+  }
+
+  .layer-badge.foundation { background: var(--accent-teal-dim); color: var(--accent-teal); border: 1px solid var(--accent-teal-dim); }
+  .layer-badge.integration { background: var(--accent-gold-dim); color: var(--accent-gold); border: 1px solid var(--accent-gold-dim); }
+  .layer-badge.api { background: rgba(255,255,255,0.08); color: var(--text-primary); border: 1px solid rgba(255,255,255,0.15); }
+
+  /* --- Subsections --- */
+  .subsection {
+    margin-bottom: 2.5rem;
+  }
+
+  .subsection-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .subsection-title::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border: 1.5px solid var(--accent-teal);
+    border-radius: 2px;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  .subsection-desc {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 1.25rem;
+    line-height: 1.6;
+  }
+
+  /* --- Code Blocks --- */
+  .code-block {
+    background: var(--bg-code);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+
+  .code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    background: rgba(0, 229, 255, 0.04);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .code-filename {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.72rem;
+    color: var(--accent-teal);
+    font-weight: 500;
+  }
+
+  .code-lang {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.62rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  pre {
+    margin: 0;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+  }
+
+  pre code {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.78rem;
+    line-height: 1.65;
+    color: var(--text-secondary);
+    white-space: pre;
+  }
+
+  .kw { color: #00e5ff; }
+  .fn { color: #bfa76a; }
+  .str { color: #7ec699; }
+  .cm { color: #5a7878; font-style: italic; }
+  .tp { color: #c792ea; }
+  .dc { color: #ff8a65; }
+  .num { color: #f78c6c; }
+  .op { color: #89ddff; }
+
+  /* --- Mermaid Containers --- */
+  .mermaid-container {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    overflow-x: auto;
+  }
+
+  .mermaid-container .mermaid {
+    display: flex;
+    justify-content: center;
+  }
+
+  .mermaid-label {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .mermaid-label::before {
+    content: '';
+    width: 12px;
+    height: 1px;
+    background: var(--text-dim);
+  }
+
+  /* --- Card Grid --- */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .info-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 1.25rem;
+    transition: border-color 0.2s;
+  }
+
+  .info-card:hover {
+    border-color: var(--accent-teal-dim);
+  }
+
+  .info-card .card-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--accent-teal);
+    margin-bottom: 0.4rem;
+  }
+
+  .info-card .card-desc {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  .info-card .card-tag {
+    display: inline-block;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.62rem;
+    color: var(--accent-gold);
+    background: var(--accent-gold-dim);
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    margin-top: 0.5rem;
+  }
+
+  /* --- Side-by-Side Layout --- */
+  .side-by-side {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  @media (max-width: 768px) {
+    .side-by-side { grid-template-columns: 1fr; }
+    .card-grid { grid-template-columns: 1fr; }
+    h1 { font-size: 1.8rem; }
+  }
+
+  .path-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 1.5rem;
+  }
+
+  .path-card.path-a { border-top: 2px solid var(--accent-teal); }
+  .path-card.path-b { border-top: 2px solid var(--accent-gold); }
+
+  .path-label {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+
+  .path-label.a-label { color: var(--accent-teal); }
+  .path-label.b-label { color: var(--accent-gold); }
+
+  .path-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+  }
+
+  .path-flow {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    line-height: 2;
+    padding: 0.75rem;
+    background: var(--bg-code);
+    border-radius: 4px;
+  }
+
+  /* --- Circuit Trace Decorations --- */
+  .circuit-trace {
+    position: relative;
+    margin: 3rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .circuit-trace svg {
+    width: 100%;
+    max-width: 800px;
+    height: 24px;
+  }
+
+  /* --- Agent Grid (9 agents) --- */
+  .agent-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  @media (max-width: 768px) {
+    .agent-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  .agent-chip {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 5px;
+    padding: 0.75rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .agent-chip:hover {
+    border-color: var(--accent-teal);
+    box-shadow: 0 0 16px var(--accent-teal-glow);
+  }
+
+  .agent-chip .chip-name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--accent-teal);
+  }
+
+  .agent-chip .chip-desc {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    line-height: 1.4;
+  }
+
+  /* --- Event Table --- */
+  .event-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1.5rem;
+    font-size: 0.82rem;
+  }
+
+  .event-table thead th {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    color: var(--accent-teal);
+    text-align: left;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--accent-teal-dim);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .event-table tbody td {
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+  }
+
+  .event-table tbody tr:hover td {
+    background: rgba(0, 229, 255, 0.03);
+  }
+
+  .event-table .event-type-cell {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.75rem;
+    color: var(--accent-gold);
+  }
+
+  .event-table .icon-cell {
+    font-size: 1rem;
+    text-align: center;
+  }
+
+  /* --- Model Table --- */
+  .model-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1.5rem;
+    font-size: 0.78rem;
+    font-family: 'Fira Code', monospace;
+  }
+
+  .model-table thead th {
+    color: var(--text-dim);
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 0.68rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .model-table tbody td {
+    padding: 0.4rem 0.75rem;
+    border-bottom: 1px solid rgba(26,51,51,0.5);
+    color: var(--text-secondary);
+  }
+
+  .model-table .model-id {
+    color: var(--accent-teal);
+  }
+
+  .model-table .rag-yes {
+    color: var(--accent-gold);
+  }
+
+  .model-table .rag-no {
+    color: var(--text-dim);
+  }
+
+  /* --- Footer --- */
+  .page-footer {
+    text-align: center;
+    padding-top: 3rem;
+    border-top: 1px solid var(--border-subtle);
+    position: relative;
+  }
+
+  .page-footer::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent-gold), transparent);
+  }
+
+  .footer-text {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+  }
+
+  /* --- Scrollbar --- */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg-primary); }
+  ::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent-teal-dim); }
+</style>
+</head>
+<body>
+
+<div class="page-wrapper">
+
+  <!-- ============================================================ -->
+  <!-- HEADER -->
+  <!-- ============================================================ -->
+  <header class="page-header">
+    <div class="header-label">Technical Integration Blueprint</div>
+    <h1>agent-reasoning <span>&rarr;</span> agentic_rag</h1>
+    <p class="header-subtitle">
+      A bottom-up technical review of the full integration stack: from BaseAgent abstract class
+      through ReasoningEnsemble to RAGReasoningEnsemble and the OpenAI-compatible API surface.
+    </p>
+    <div class="header-meta">
+      <span><span class="dot dot-teal"></span> Layer 1: Foundation Library</span>
+      <span><span class="dot dot-gold"></span> Layer 2: Integration Bridge</span>
+      <span><span class="dot dot-white"></span> Layer 3: API Surface</span>
+    </div>
+  </header>
+
+  <!-- ============================================================ -->
+  <!-- CIRCUIT TRACE SEPARATOR -->
+  <!-- ============================================================ -->
+  <div class="circuit-trace">
+    <svg viewBox="0 0 800 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <line x1="0" y1="12" x2="120" y2="12" stroke="#00e5ff" stroke-width="0.5" stroke-dasharray="2 4"/>
+      <circle cx="130" cy="12" r="3" fill="#00e5ff" opacity="0.6"/>
+      <line x1="140" y1="12" x2="200" y2="12" stroke="#00e5ff" stroke-width="0.5"/>
+      <rect x="200" y="8" width="8" height="8" rx="1.5" fill="none" stroke="#00e5ff" stroke-width="0.7" opacity="0.5"/>
+      <line x1="210" y1="12" x2="320" y2="12" stroke="#00e5ff" stroke-width="0.5" stroke-dasharray="4 3"/>
+      <circle cx="330" cy="12" r="2" fill="#bfa76a" opacity="0.5"/>
+      <line x1="340" y1="12" x2="460" y2="12" stroke="#bfa76a" stroke-width="0.5" stroke-dasharray="2 4"/>
+      <rect x="460" y="8" width="8" height="8" rx="1.5" fill="none" stroke="#bfa76a" stroke-width="0.7" opacity="0.5"/>
+      <line x1="470" y1="12" x2="580" y2="12" stroke="#bfa76a" stroke-width="0.5"/>
+      <circle cx="590" cy="12" r="3" fill="#ffffff" opacity="0.4"/>
+      <line x1="600" y1="12" x2="660" y2="12" stroke="#ffffff" stroke-width="0.5" stroke-dasharray="3 4"/>
+      <rect x="660" y="8" width="8" height="8" rx="1.5" fill="none" stroke="#ffffff" stroke-width="0.5" opacity="0.3"/>
+      <line x1="670" y1="12" x2="800" y2="12" stroke="#ffffff" stroke-width="0.3" stroke-dasharray="2 5"/>
+    </svg>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- LAYER 1: FOUNDATION -->
+  <!-- ============================================================ -->
+  <section class="layer-section">
+    <div class="layer-header">
+      <div class="layer-indicator foundation"></div>
+      <div class="layer-title-group">
+        <div class="layer-number">Layer 1 / Foundation</div>
+        <h2 class="layer-title foundation-text">agent-reasoning Library</h2>
+      </div>
+      <span class="layer-badge foundation">PyPI: agent-reasoning</span>
+    </div>
+
+    <!-- BaseAgent -->
+    <div class="subsection">
+      <h3 class="subsection-title">BaseAgent Abstract Class</h3>
+      <p class="subsection-desc">
+        The root of all 9 reasoning strategies. Every agent inherits from BaseAgent, which provides
+        an OllamaClient connection, structured logging, and the contract: implement <code>run()</code>,
+        optionally override <code>stream()</code>.
+      </p>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-filename">agent_reasoning/agents/base.py</span>
+          <span class="code-lang">Python</span>
+        </div>
+<pre><code><span class="kw">from</span> abc <span class="kw">import</span> ABC, abstractmethod
+<span class="kw">from</span> agent_reasoning.client <span class="kw">import</span> OllamaClient
+<span class="kw">from</span> termcolor <span class="kw">import</span> colored
+
+<span class="kw">class</span> <span class="tp">BaseAgent</span>(ABC):
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, model=<span class="str">"gemma3:270m"</span>, base_url=<span class="kw">None</span>):
+        self.client = OllamaClient(model=model, base_url=base_url)
+        self.name = <span class="str">"BaseAgent"</span>
+        self.color = <span class="str">"white"</span>
+
+    <span class="kw">def</span> <span class="fn">log_thought</span>(self, message):
+        print(colored(f<span class="str">"[{self.name}]: {message}"</span>, self.color))
+
+    <span class="dc">@abstractmethod</span>
+    <span class="kw">def</span> <span class="fn">run</span>(self, query) -> <span class="tp">str</span>:
+        <span class="kw">pass</span>
+
+    <span class="kw">def</span> <span class="fn">stream</span>(self, query) -> <span class="tp">Generator[str, None, None]</span>:
+        <span class="cm">"""Default: yields the final result as one chunk."""</span>
+        result = self.run(query)
+        <span class="kw">if</span> result:
+            <span class="kw">yield</span> result</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-filename">agent_reasoning/client.py</span>
+          <span class="code-lang">Python</span>
+        </div>
+<pre><code><span class="kw">class</span> <span class="tp">OllamaClient</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, model=<span class="str">"gemma3:270m"</span>, base_url=<span class="kw">None</span>):
+        <span class="kw">if</span> base_url <span class="kw">is None</span>:
+            <span class="kw">from</span> agent_reasoning.config <span class="kw">import</span> get_ollama_host
+            base_url = get_ollama_host()
+        self.model = model
+        self.base_url = base_url
+
+    <span class="kw">def</span> <span class="fn">generate</span>(self, prompt, system=<span class="kw">None</span>, stream=<span class="kw">True</span>,
+                 temperature=<span class="num">0.7</span>, top_k=<span class="num">40</span>, top_p=<span class="num">0.9</span>,
+                 num_predict=<span class="num">2048</span>, stop=<span class="kw">None</span>):
+        url = f<span class="str">"{self.base_url}/api/generate"</span>
+        <span class="cm"># POSTs to Ollama, streams NDJSON chunks</span>
+        <span class="cm"># Yields response text incrementally</span>
+        ...</code></pre>
+      </div>
+    </div>
+
+    <!-- 9 Agent Implementations -->
+    <div class="subsection">
+      <h3 class="subsection-title">9 Agent Implementations</h3>
+      <p class="subsection-desc">
+        Each agent implements a distinct reasoning strategy. All inherit from BaseAgent and communicate
+        with Ollama through OllamaClient. The AGENT_MAP provides both canonical and alias keys for flexible lookup.
+      </p>
+      <div class="agent-grid">
+        <div class="agent-chip">
+          <span class="chip-name">StandardAgent</span>
+          <span class="chip-desc">Direct prompt &rarr; Direct response</span>
+        </div>
+        <div class="agent-chip">
+          <span class="chip-name">CoTAgent</span>
+          <span class="chip-desc">Step detection via regex parsing</span>
+        </div>
+        <div class="agent-chip">
+          <span class="chip-name">ToTAgent</span>
+          <span class="chip-desc">BFS with scoring (width=2, depth=3)</span>
+        </div>
+        <div class="agent-chip">
+          <span class="chip-name">ReActAgent</span>
+          <span class="chip-desc">Thought-Action-Observation loop</span>
+        </div>
+        <div class="agent-chip">
+          <span class="chip-name">SelfReflectionAgent</span>
+          <span class="chip-desc">Draft &rarr; Critique &rarr; Refine (max 5)</span>
+        </div>
+        <div class="agent-chip">
+          <span class="chip-name">ConsistencyAgent</span>
+          <span class="chip-desc">k=5 samples + majority vote</span>
+        </div>
+        <div class="agent-chip">
+          <span class="chip-name">DecomposedAgent</span>
+          <span class="chip-desc">Sub-tasks &rarr; Solve &rarr; Synthesize</span>
+        </div>
+        <div class="agent-chip">
+          <span class="chip-name">LeastToMostAgent</span>
+          <span class="chip-desc">Easy &rarr; Hard with context accum.</span>
+        </div>
+        <div class="agent-chip">
+          <span class="chip-name">RecursiveAgent</span>
+          <span class="chip-desc">Python codegen + exec (max 8 steps)</span>
+        </div>
+      </div>
+
+      <!-- Mermaid Class Diagram -->
+      <div class="mermaid-container">
+        <div class="mermaid-label">Class Inheritance Diagram</div>
+        <div class="mermaid">
+classDiagram
+    class BaseAgent {
+        &lt;&lt;abstract&gt;&gt;
+        +OllamaClient client
+        +str name
+        +str color
+        +log_thought(message)
+        +run(query)* str
+        +stream(query) Generator
+    }
+
+    class StandardAgent {
+        +run(query) str
+    }
+    class CoTAgent {
+        +run(query) str
+        -_detect_steps(text) list
+    }
+    class ToTAgent {
+        +int width = 2
+        +int depth = 3
+        +run(query) str
+        -_bfs_explore(query) str
+        -_score_node(node) float
+    }
+    class ReActAgent {
+        +dict tools
+        +run(query) str
+        -_parse_action(text) tuple
+        -_execute_tool(name, args) str
+    }
+    class SelfReflectionAgent {
+        +int max_iterations = 5
+        +run(query) str
+        -_critique(draft) str
+        -_refine(draft, critique) str
+    }
+    class ConsistencyAgent {
+        +int k = 5
+        +run(query) str
+        -_majority_vote(samples) str
+    }
+    class DecomposedAgent {
+        +run(query) str
+        -_decompose(query) list
+        -_solve(subtask) str
+        -_synthesize(results) str
+    }
+    class LeastToMostAgent {
+        +run(query) str
+        -_order_tasks(tasks) list
+        -_solve_with_context(task, ctx) str
+    }
+    class RecursiveAgent {
+        +int max_steps = 8
+        +run(query) str
+        -_generate_code(query) str
+        -_execute_code(code) str
+    }
+
+    BaseAgent <|-- StandardAgent
+    BaseAgent <|-- CoTAgent
+    BaseAgent <|-- ToTAgent
+    BaseAgent <|-- ReActAgent
+    BaseAgent <|-- SelfReflectionAgent
+    BaseAgent <|-- ConsistencyAgent
+    BaseAgent <|-- DecomposedAgent
+    BaseAgent <|-- LeastToMostAgent
+    BaseAgent <|-- RecursiveAgent
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-filename">agent_reasoning/agents/__init__.py</span>
+          <span class="code-lang">Python &mdash; AGENT_MAP</span>
+        </div>
+<pre><code>AGENT_MAP = {
+    <span class="str">"standard"</span>:         StandardAgent,
+    <span class="str">"cot"</span>:              CoTAgent,
+    <span class="str">"chain_of_thought"</span>: CoTAgent,        <span class="cm"># alias</span>
+    <span class="str">"tot"</span>:              ToTAgent,
+    <span class="str">"tree_of_thoughts"</span>: ToTAgent,        <span class="cm"># alias</span>
+    <span class="str">"react"</span>:            ReActAgent,
+    <span class="str">"self_reflection"</span>:  SelfReflectionAgent,
+    <span class="str">"reflection"</span>:       SelfReflectionAgent, <span class="cm"># alias</span>
+    <span class="str">"consistency"</span>:      ConsistencyAgent,
+    <span class="str">"self_consistency"</span>: ConsistencyAgent,    <span class="cm"># alias</span>
+    <span class="str">"decomposed"</span>:       DecomposedAgent,
+    <span class="str">"least_to_most"</span>:    LeastToMostAgent,
+    <span class="str">"ltm"</span>:              LeastToMostAgent,    <span class="cm"># alias</span>
+    <span class="str">"recursive"</span>:        RecursiveAgent,
+    <span class="str">"rlm"</span>:              RecursiveAgent,      <span class="cm"># alias</span>
+}
+<span class="cm"># 9 unique agents, 14 total keys (5 aliases)</span></code></pre>
+      </div>
+    </div>
+
+    <!-- ReasoningEnsemble -->
+    <div class="subsection">
+      <h3 class="subsection-title">ReasoningEnsemble (Base Orchestrator)</h3>
+      <p class="subsection-desc">
+        The ensemble orchestrates multiple reasoning strategies in parallel using a ThreadPoolExecutor
+        (max 10 workers). Responses are clustered by semantic similarity using sentence-transformers embeddings,
+        and the largest cluster wins via majority vote. Ties prefer Chain-of-Thought.
+      </p>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-filename">agent_reasoning/ensemble.py</span>
+          <span class="code-lang">Python &mdash; Core Interface</span>
+        </div>
+<pre><code><span class="kw">class</span> <span class="tp">ReasoningEnsemble</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self,
+        model_name: <span class="tp">str</span> = <span class="str">"gemma3:270m"</span>,
+        similarity_threshold: <span class="tp">float</span> = <span class="num">0.85</span>,
+        embedding_model: <span class="tp">str</span> = <span class="str">"all-MiniLM-L6-v2"</span>
+    ):
+        self._executor = ThreadPoolExecutor(max_workers=<span class="num">10</span>)
+
+    <span class="kw">async def</span> <span class="fn">run</span>(self, query, strategies, config=<span class="kw">None</span>) -> <span class="tp">Dict</span>:
+        <span class="cm"># Single strategy &rarr; direct return (no voting)</span>
+        <span class="cm"># Multiple strategies &rarr; parallel execution + majority vote</span>
+        <span class="kw">return</span> {
+            <span class="str">"winner"</span>:         {strategy, response, vote_count},
+            <span class="str">"all_responses"</span>:  [{strategy, response, duration_ms}, ...],
+            <span class="str">"total_duration_ms"</span>: <span class="tp">float</span>,
+            <span class="str">"voting_details"</span>:  {clusters, threshold, total_responses}
+        }
+
+    <span class="kw">def</span> <span class="fn">_majority_vote</span>(self, responses):
+        <span class="cm"># 1. Encode responses with SentenceTransformer</span>
+        <span class="cm"># 2. Compute cosine similarity matrix</span>
+        <span class="cm"># 3. Greedy clustering (threshold: 0.85)</span>
+        <span class="cm"># 4. Largest cluster wins; ties prefer CoT</span>
+        ...
+
+    <span class="kw">def</span> <span class="fn">run_sync</span>(self, query, strategies, config=<span class="kw">None</span>):
+        <span class="kw">return</span> asyncio.run(self.run(query, strategies, config))</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- CIRCUIT TRACE SEPARATOR -->
+  <!-- ============================================================ -->
+  <div class="circuit-trace">
+    <svg viewBox="0 0 800 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <line x1="0" y1="12" x2="80" y2="12" stroke="#00e5ff" stroke-width="0.5"/>
+      <circle cx="90" cy="12" r="3" fill="#00e5ff" opacity="0.5"/>
+      <line x1="100" y1="12" x2="180" y2="4" stroke="#00e5ff" stroke-width="0.4"/>
+      <line x1="180" y1="4" x2="300" y2="4" stroke="#bfa76a" stroke-width="0.5"/>
+      <circle cx="300" cy="4" r="2" fill="#bfa76a" opacity="0.7"/>
+      <line x1="300" y1="4" x2="380" y2="12" stroke="#bfa76a" stroke-width="0.4"/>
+      <line x1="380" y1="12" x2="500" y2="12" stroke="#bfa76a" stroke-width="0.5" stroke-dasharray="3 3"/>
+      <rect x="500" y="7" width="10" height="10" rx="2" fill="none" stroke="#bfa76a" stroke-width="0.7"/>
+      <line x1="512" y1="12" x2="600" y2="20" stroke="#bfa76a" stroke-width="0.4"/>
+      <line x1="600" y1="20" x2="700" y2="20" stroke="#bfa76a" stroke-width="0.5"/>
+      <circle cx="710" cy="20" r="2.5" fill="#bfa76a" opacity="0.6"/>
+      <line x1="720" y1="20" x2="800" y2="12" stroke="#bfa76a" stroke-width="0.3"/>
+    </svg>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- LAYER 2: INTEGRATION BRIDGE -->
+  <!-- ============================================================ -->
+  <section class="layer-section">
+    <div class="layer-header">
+      <div class="layer-indicator integration"></div>
+      <div class="layer-title-group">
+        <div class="layer-number">Layer 2 / Integration Bridge</div>
+        <h2 class="layer-title integration-text">RAGReasoningEnsemble</h2>
+      </div>
+      <span class="layer-badge integration">agentic_rag/reasoning/</span>
+    </div>
+
+    <!-- How it extends -->
+    <div class="subsection">
+      <h3 class="subsection-title">Extending the Library with RAG</h3>
+      <p class="subsection-desc">
+        RAGReasoningEnsemble wraps the base ReasoningEnsemble from agent-reasoning and adds three capabilities:
+        RAG context retrieval from Oracle AI Database, database event logging via OraDBEventLogger,
+        and a streaming execution trace protocol for real-time UI updates.
+      </p>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-filename">agentic_rag/src/reasoning/rag_ensemble.py</span>
+          <span class="code-lang">Python &mdash; Init + Composition</span>
+        </div>
+<pre><code><span class="kw">from</span> agent_reasoning <span class="kw">import</span> ReasoningEnsemble
+<span class="kw">from</span> agent_reasoning.agents <span class="kw">import</span> AGENT_MAP
+
+<span class="kw">class</span> <span class="tp">RAGReasoningEnsemble</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self,
+        model_name: <span class="tp">str</span> = <span class="str">"gemma3:270m"</span>,
+        vector_store=<span class="kw">None</span>,         <span class="cm"># OraDBVectorStore</span>
+        event_logger=<span class="kw">None</span>,         <span class="cm"># OraDBEventLogger</span>
+        similarity_threshold=<span class="num">0.85</span>
+    ):
+        self.ensemble = ReasoningEnsemble(  <span class="cm"># Composition, not inheritance</span>
+            model_name=model_name,
+            similarity_threshold=similarity_threshold
+        )
+        self.vector_store = vector_store
+        self.event_logger = event_logger</code></pre>
+      </div>
+    </div>
+
+    <!-- RAG Context Retrieval -->
+    <div class="subsection">
+      <h3 class="subsection-title">RAG Context Retrieval</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-filename">_retrieve_context(query, collection)</span>
+          <span class="code-lang">Flow</span>
+        </div>
+<pre><code>Query &rarr; <span class="fn">_retrieve_context</span>(query, collection)
+  &rarr; collection_map: {
+      <span class="str">"PDF"</span>:        <span class="str">"pdf_collection"</span>,
+      <span class="str">"Web"</span>:        <span class="str">"web_collection"</span>,
+      <span class="str">"Repository"</span>: <span class="str">"repo_collection"</span>,
+      <span class="str">"General"</span>:    <span class="str">"general_knowledge"</span>
+    }
+  &rarr; vector_store.query(query, collection_name, n_results=<span class="num">5</span>)
+  &rarr; Returns {
+      chunks:    [{content, metadata, score}, ...],
+      sources:   [<span class="str">"file.pdf"</span>, <span class="str">"page.html"</span>, ...],
+      avg_score: <span class="tp">float</span>
+    }</code></pre>
+      </div>
+    </div>
+
+    <!-- Query Augmentation -->
+    <div class="subsection">
+      <h3 class="subsection-title">Query Augmentation</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-filename">_build_augmented_prompt(query, context)</span>
+          <span class="code-lang">Template</span>
+        </div>
+<pre><code><span class="fn">_build_augmented_prompt</span>(query, context):
+  &rarr; <span class="str">"""Use the following context to answer the question.
+  If the context doesn't contain relevant information,
+  use your general knowledge.
+
+  Context:
+  [Source: file.pdf]
+  chunk text here...
+
+  [Source: page.html]
+  another chunk...
+
+  Question: {query}
+
+  Answer:"""</span></code></pre>
+      </div>
+    </div>
+
+    <!-- Execution Flow Sequence Diagram -->
+    <div class="subsection">
+      <h3 class="subsection-title">Execution Flow</h3>
+      <div class="mermaid-container">
+        <div class="mermaid-label">Sequence Diagram: Full Execution Path</div>
+        <div class="mermaid">
+sequenceDiagram
+    participant U as User / API
+    participant R as RAGReasoningEnsemble
+    participant V as OraDBVectorStore
+    participant O as Oracle AI Database
+    participant E as ReasoningEnsemble
+    participant A as BaseAgent Subclasses
+    participant L as Ollama (LLM)
+    participant D as OraDBEventLogger
+
+    U->>R: run(query, strategies, use_rag=True, collection="PDF")
+    Note right of R: log_event("start")
+
+    rect rgb(13, 59, 59)
+        R->>V: _retrieve_context(query, "PDF")
+        V->>O: vector_store.query(query, "pdf_collection", n_results=5)
+        O-->>V: [{content, metadata, score}, ...]
+        V-->>R: {chunks, sources, avg_score}
+        Note right of R: log_event("rag", chunks_count)
+    end
+
+    R->>R: _build_augmented_prompt(query, context)
+    Note right of R: Augmented query = context + question
+
+    rect rgb(26, 46, 46)
+        R->>E: ensemble.run(augmented_query, strategies)
+        Note right of E: ThreadPoolExecutor (10 workers)
+
+        par Parallel Strategy Execution
+            E->>A: StandardAgent.run(query)
+            A->>L: OllamaClient.generate(prompt)
+            L-->>A: streaming chunks
+            A-->>E: response string
+        and
+            E->>A: CoTAgent.run(query)
+            A->>L: OllamaClient.generate(prompt)
+            L-->>A: streaming chunks
+            A-->>E: response string
+        and
+            E->>A: ToTAgent.run(query)
+            A->>L: OllamaClient.generate(prompt)
+            L-->>A: streaming chunks
+            A-->>E: response string
+        end
+
+        E->>E: _majority_vote(responses)
+        Note right of E: SentenceTransformer embeddings
+        Note right of E: Cosine similarity clustering
+        Note right of E: Largest cluster wins
+        E-->>R: {winner, all_responses, voting_details}
+    end
+
+    Note right of R: log_event("voting")
+    Note right of R: log_event("complete")
+
+    R->>D: log_reasoning_event(query, strategies, result, ...)
+    D->>O: INSERT INTO REASONING_EVENTS
+
+    R-->>U: ReasoningResult
+        </div>
+      </div>
+    </div>
+
+    <!-- ExecutionEvent Types -->
+    <div class="subsection">
+      <h3 class="subsection-title">ExecutionEvent Dataclass &amp; Event Types</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-filename">rag_ensemble.py &mdash; Data structures</span>
+          <span class="code-lang">Python</span>
+        </div>
+<pre><code><span class="dc">@dataclass</span>
+<span class="kw">class</span> <span class="tp">ExecutionEvent</span>:
+    timestamp: <span class="tp">str</span>        <span class="cm"># "%H:%M:%S"</span>
+    event_type: <span class="tp">str</span>       <span class="cm"># see table below</span>
+    message: <span class="tp">str</span>
+    data: <span class="tp">Optional[Dict]</span> = <span class="kw">None</span>
+
+<span class="dc">@dataclass</span>
+<span class="kw">class</span> <span class="tp">ReasoningResult</span>:
+    winner: <span class="tp">Dict[str, Any]</span>
+    all_responses: <span class="tp">List[Dict]</span>
+    execution_trace: <span class="tp">List[ExecutionEvent]</span>
+    rag_context: <span class="tp">Optional[Dict]</span>
+    total_duration_ms: <span class="tp">float</span>
+    voting_details: <span class="tp">Optional[Dict]</span></code></pre>
+      </div>
+
+      <table class="event-table">
+        <thead>
+          <tr>
+            <th>Event Type</th>
+            <th>Description</th>
+            <th>Data Payload</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="event-type-cell">start</td>
+            <td>Query begins processing</td>
+            <td>Strategy count</td>
+          </tr>
+          <tr>
+            <td class="event-type-cell">rag</td>
+            <td>RAG context retrieved from Oracle</td>
+            <td>{chunks, score}</td>
+          </tr>
+          <tr>
+            <td class="event-type-cell">strategy_start</td>
+            <td>Individual strategy begins execution</td>
+            <td>Strategy icon + name</td>
+          </tr>
+          <tr>
+            <td class="event-type-cell">strategy_complete</td>
+            <td>Strategy finished with timing</td>
+            <td>{duration_ms}</td>
+          </tr>
+          <tr>
+            <td class="event-type-cell">voting</td>
+            <td>Majority voting / winner selection</td>
+            <td>Winner + vote count</td>
+          </tr>
+          <tr>
+            <td class="event-type-cell">complete</td>
+            <td>Full ensemble processing complete</td>
+            <td>Total duration</td>
+          </tr>
+          <tr>
+            <td class="event-type-cell">result</td>
+            <td>Final result (streaming mode only)</td>
+            <td>ReasoningResult</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="subsection-title" style="margin-top: 1.5rem;">Strategy Icons</div>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-filename">STRATEGY_ICONS</span>
+          <span class="code-lang">Mapping</span>
+        </div>
+<pre><code>STRATEGY_ICONS = {
+    <span class="str">"standard"</span>:         "📝",    <span class="str">"cot"</span>:              "🔗",
+    <span class="str">"tot"</span>:              "🌳",    <span class="str">"react"</span>:            "🛠️",
+    <span class="str">"self_reflection"</span>:  "🪞",    <span class="str">"consistency"</span>:      "🔄",
+    <span class="str">"decomposed"</span>:       "🧩",    <span class="str">"least_to_most"</span>:    "📈",
+    <span class="str">"recursive"</span>:        "🔁",
+}</code></pre>
+      </div>
+    </div>
+
+    <!-- OraDBEventLogger -->
+    <div class="subsection">
+      <h3 class="subsection-title">OraDBEventLogger: Oracle DB Persistence</h3>
+      <p class="subsection-desc">
+        All reasoning events are persisted to Oracle AI Database. The logger maintains 6 event tables,
+        with REASONING_EVENTS specifically tracking ensemble executions including strategy selections,
+        vote counts, durations, and RAG context metadata.
+      </p>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-filename">OraDBEventLogger.log_reasoning_event()</span>
+          <span class="code-lang">Oracle DB Schema</span>
+        </div>
+<pre><code><span class="kw">CREATE TABLE</span> REASONING_EVENTS (
+    event_id              <span class="tp">VARCHAR2(100)</span> PRIMARY KEY,
+    timestamp             <span class="tp">TIMESTAMP</span> DEFAULT CURRENT_TIMESTAMP,
+    query_text            <span class="tp">CLOB</span>,
+    strategies_requested  <span class="tp">CLOB</span>,           <span class="cm">-- JSON array</span>
+    winner_strategy       <span class="tp">VARCHAR2(50)</span>,
+    winner_response       <span class="tp">CLOB</span>,
+    vote_count            <span class="tp">NUMBER</span>,
+    total_strategies      <span class="tp">NUMBER</span>,
+    all_responses         <span class="tp">CLOB</span>,           <span class="cm">-- JSON array</span>
+    rag_enabled           <span class="tp">NUMBER(1)</span>,
+    collection_used       <span class="tp">VARCHAR2(200)</span>,
+    chunks_retrieved      <span class="tp">NUMBER</span>,
+    total_duration_ms     <span class="tp">NUMBER</span>,
+    parallel_execution    <span class="tp">NUMBER(1)</span>,      <span class="cm">-- always 1 for ensemble</span>
+    config_json           <span class="tp">CLOB</span>,
+    status                <span class="tp">VARCHAR2(50)</span>,
+    error_message         <span class="tp">CLOB</span>
+);</code></pre>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ============================================================ -->
+  <!-- CIRCUIT TRACE SEPARATOR -->
+  <!-- ============================================================ -->
+  <div class="circuit-trace">
+    <svg viewBox="0 0 800 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <line x1="0" y1="12" x2="60" y2="12" stroke="#bfa76a" stroke-width="0.5"/>
+      <circle cx="70" cy="12" r="2" fill="#bfa76a" opacity="0.6"/>
+      <line x1="80" y1="12" x2="160" y2="6" stroke="#bfa76a" stroke-width="0.4"/>
+      <line x1="160" y1="6" x2="280" y2="6" stroke="#ffffff" stroke-width="0.5" stroke-dasharray="3 3"/>
+      <rect x="280" y="3" width="6" height="6" rx="1" fill="#ffffff" opacity="0.3"/>
+      <line x1="288" y1="6" x2="400" y2="12" stroke="#ffffff" stroke-width="0.4"/>
+      <line x1="400" y1="12" x2="520" y2="12" stroke="#ffffff" stroke-width="0.5"/>
+      <circle cx="530" cy="12" r="3" fill="#ffffff" opacity="0.3"/>
+      <line x1="540" y1="12" x2="620" y2="18" stroke="#ffffff" stroke-width="0.4"/>
+      <line x1="620" y1="18" x2="720" y2="18" stroke="#ffffff" stroke-width="0.3" stroke-dasharray="2 4"/>
+      <rect x="720" y="15" width="6" height="6" rx="1" fill="none" stroke="#ffffff" stroke-width="0.5" opacity="0.3"/>
+      <line x1="728" y1="18" x2="800" y2="12" stroke="#ffffff" stroke-width="0.3"/>
+    </svg>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- LAYER 3: API SURFACE -->
+  <!-- ============================================================ -->
+  <section class="layer-section">
+    <div class="layer-header">
+      <div class="layer-indicator api"></div>
+      <div class="layer-title-group">
+        <div class="layer-number">Layer 3 / User-Facing</div>
+        <h2 class="layer-title api-text">API Surface</h2>
+      </div>
+      <span class="layer-badge api">FastAPI + OpenAI compat</span>
+    </div>
+
+    <!-- Strategies as Models -->
+    <div class="subsection">
+      <h3 class="subsection-title">Strategies Exposed as "Models" in Open WebUI</h3>
+      <p class="subsection-desc">
+        The OpenAI-compatible <code>/v1/models</code> endpoint presents each reasoning strategy (and its RAG variant)
+        as a selectable "model" in Open WebUI. This means 9 base strategies x 2 (with/without RAG) = 18 model IDs.
+        The REASONING_MODELS registry maps each model ID to its strategy key and RAG flag.
+      </p>
+
+      <table class="model-table">
+        <thead>
+          <tr>
+            <th>Model ID</th>
+            <th>Strategy</th>
+            <th>RAG</th>
+            <th>Display Name</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="model-id">standard</td><td>standard</td><td class="rag-no">--</td><td>Standard</td></tr>
+          <tr><td class="model-id">standard-rag</td><td>standard</td><td class="rag-yes">RAG</td><td>Standard + RAG</td></tr>
+          <tr><td class="model-id">cot</td><td>cot</td><td class="rag-no">--</td><td>Chain of Thought</td></tr>
+          <tr><td class="model-id">cot-rag</td><td>cot</td><td class="rag-yes">RAG</td><td>Chain of Thought + RAG</td></tr>
+          <tr><td class="model-id">tot</td><td>tot</td><td class="rag-no">--</td><td>Tree of Thoughts</td></tr>
+          <tr><td class="model-id">tot-rag</td><td>tot</td><td class="rag-yes">RAG</td><td>Tree of Thoughts + RAG</td></tr>
+          <tr><td class="model-id">react</td><td>react</td><td class="rag-no">--</td><td>ReAct</td></tr>
+          <tr><td class="model-id">react-rag</td><td>react</td><td class="rag-yes">RAG</td><td>ReAct + RAG</td></tr>
+          <tr><td class="model-id">self-reflection</td><td>self_reflection</td><td class="rag-no">--</td><td>Self-Reflection</td></tr>
+          <tr><td class="model-id">self-reflection-rag</td><td>self_reflection</td><td class="rag-yes">RAG</td><td>Self-Reflection + RAG</td></tr>
+          <tr><td class="model-id">consistency</td><td>consistency</td><td class="rag-no">--</td><td>Self-Consistency</td></tr>
+          <tr><td class="model-id">consistency-rag</td><td>consistency</td><td class="rag-yes">RAG</td><td>Self-Consistency + RAG</td></tr>
+          <tr><td class="model-id">decomposed</td><td>decomposed</td><td class="rag-no">--</td><td>Decomposed</td></tr>
+          <tr><td class="model-id">decomposed-rag</td><td>decomposed</td><td class="rag-yes">RAG</td><td>Decomposed + RAG</td></tr>
+          <tr><td class="model-id">least-to-most</td><td>least_to_most</td><td class="rag-no">--</td><td>Least-to-Most</td></tr>
+          <tr><td class="model-id">least-to-most-rag</td><td>least_to_most</td><td class="rag-yes">RAG</td><td>Least-to-Most + RAG</td></tr>
+          <tr><td class="model-id">recursive</td><td>recursive</td><td class="rag-no">--</td><td>Recursive</td></tr>
+          <tr><td class="model-id">recursive-rag</td><td>recursive</td><td class="rag-yes">RAG</td><td>Recursive + RAG</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- A2A Protocol -->
+    <div class="subsection">
+      <h3 class="subsection-title">A2A Protocol Integration</h3>
+      <p class="subsection-desc">
+        The A2A (Agent-to-Agent) handler processes JSON-RPC 2.0 requests on <code>POST /a2a</code>.
+        Reasoning methods are routed through the RAGReasoningEnsemble for strategy execution,
+        while document and agent discovery methods operate through the standard A2A handler.
+      </p>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-filename">POST /a2a</span>
+          <span class="code-lang">JSON-RPC 2.0</span>
+        </div>
+<pre><code><span class="cm">// Request</span>
+{
+    <span class="str">"jsonrpc"</span>: <span class="str">"2.0"</span>,
+    <span class="str">"method"</span>:  <span class="str">"reasoning.execute"</span>,
+    <span class="str">"params"</span>:  {
+        <span class="str">"query"</span>:    <span class="str">"What is machine learning?"</span>,
+        <span class="str">"strategy"</span>: <span class="str">"cot-rag"</span>,
+        <span class="str">"collection"</span>: <span class="str">"PDF"</span>
+    },
+    <span class="str">"id"</span>: <span class="num">1</span>
+}
+
+<span class="cm">// Additional reasoning methods:</span>
+<span class="cm">//   reasoning.strategy  - Execute a specific strategy</span>
+<span class="cm">//   reasoning.list      - List available strategies</span>
+
+<span class="cm">// Other A2A methods:</span>
+<span class="cm">//   document.query      - Query documents via RAG</span>
+<span class="cm">//   document.upload     - Upload documents</span>
+<span class="cm">//   agent.discover      - Discover agent capabilities</span>
+<span class="cm">//   agent.register      - Register new agents</span></code></pre>
+      </div>
+    </div>
+
+    <!-- CoT Agent Factory -->
+    <div class="subsection">
+      <h3 class="subsection-title">CoT Agent Factory (Separate Pipeline)</h3>
+      <p class="subsection-desc">
+        Independent from the reasoning ensemble, the Agent Factory provides a 4-stage Chain-of-Thought
+        pipeline using LangChain-based agents. These use the LocalLLM wrapper (which calls Ollama)
+        and are activated when <code>use_cot=True</code> is passed to LocalRAGAgent.
+      </p>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-filename">agents/agent_factory.py</span>
+          <span class="code-lang">Python</span>
+        </div>
+<pre><code><span class="kw">def</span> <span class="fn">create_agents</span>(llm, vector_store=<span class="kw">None</span>):
+    <span class="cm">"""Create the set of specialized CoT agents."""</span>
+    <span class="kw">return</span> {
+        <span class="str">"planner"</span>:     PlannerAgent(llm),       <span class="cm"># Query &rarr; 3-4 plan steps</span>
+        <span class="str">"researcher"</span>:  ResearchAgent(llm, vs),  <span class="cm"># Steps &rarr; Source research</span>
+        <span class="str">"reasoner"</span>:    ReasoningAgent(llm),     <span class="cm"># Findings &rarr; Conclusions</span>
+        <span class="str">"synthesizer"</span>: SynthesisAgent(llm),     <span class="cm"># Steps &rarr; Final answer</span>
+    }
+
+<span class="cm"># Each agent uses LangChain ChatPromptTemplate</span>
+<span class="cm"># and the LocalLLM wrapper that calls OllamaModelHandler</span>
+<span class="cm"># Pipeline: Plan &rarr; Research &rarr; Reason &rarr; Synthesize</span></code></pre>
+      </div>
+    </div>
+
+    <!-- Two RAG Paths -->
+    <div class="subsection">
+      <h3 class="subsection-title">Two RAG Paths: Side by Side</h3>
+      <p class="subsection-desc">
+        LocalRAGAgent provides two distinct processing paths based on the <code>use_cot</code> flag.
+        Both paths use the same underlying OraDBVectorStore for retrieval, but the reasoning
+        pipeline differs significantly.
+      </p>
+      <div class="side-by-side">
+        <div class="path-card path-a">
+          <div class="path-label a-label">Path A: use_cot=False</div>
+          <div class="path-title">RAGReasoningEnsemble</div>
+          <div class="path-flow">
+Query<br>
+&nbsp;&nbsp;|<br>
+&nbsp;&nbsp;v<br>
+RAGReasoningEnsemble.run()<br>
+&nbsp;&nbsp;|<br>
+&nbsp;&nbsp;+-- _retrieve_context()<br>
+&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;+-- OraDBVectorStore<br>
+&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;+-- Oracle AI Database<br>
+&nbsp;&nbsp;|<br>
+&nbsp;&nbsp;+-- _build_augmented_prompt()<br>
+&nbsp;&nbsp;|<br>
+&nbsp;&nbsp;+-- ensemble.run()<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+-- 9 BaseAgent subclasses<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;+-- OllamaClient<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;+-- Ollama LLM<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+-- _majority_vote()<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+-- SentenceTransformer<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+-- Cosine clustering
+          </div>
+        </div>
+        <div class="path-card path-b">
+          <div class="path-label b-label">Path B: use_cot=True</div>
+          <div class="path-title">CoT Agent Factory</div>
+          <div class="path-flow">
+Query<br>
+&nbsp;&nbsp;|<br>
+&nbsp;&nbsp;v<br>
+LocalRAGAgent._process_query_with_cot()<br>
+&nbsp;&nbsp;|<br>
+&nbsp;&nbsp;+-- vector_store.query_*_collection()<br>
+&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;+-- OraDBVectorStore<br>
+&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;+-- Oracle AI Database<br>
+&nbsp;&nbsp;|<br>
+&nbsp;&nbsp;+-- PlannerAgent.plan(query, ctx)<br>
+&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;+-- LangChain prompt<br>
+&nbsp;&nbsp;|<br>
+&nbsp;&nbsp;+-- ResearchAgent.research(q, step)<br>
+&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;+-- Cross-collection search<br>
+&nbsp;&nbsp;|<br>
+&nbsp;&nbsp;+-- ReasoningAgent.reason(q, s, f)<br>
+&nbsp;&nbsp;|<br>
+&nbsp;&nbsp;+-- SynthesisAgent.synthesize(q, steps)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+-- Final answer
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ============================================================ -->
+  <!-- FULL INTEGRATION DIAGRAM -->
+  <!-- ============================================================ -->
+  <section class="layer-section">
+    <div class="layer-header">
+      <div class="layer-indicator foundation"></div>
+      <div class="layer-indicator integration" style="margin-left:-0.5rem"></div>
+      <div class="layer-indicator api" style="margin-left:-0.5rem"></div>
+      <div class="layer-title-group">
+        <div class="layer-number">Complete Stack</div>
+        <h2 class="layer-title" style="color: var(--text-primary);">Full Integration Architecture</h2>
+      </div>
+    </div>
+
+    <div class="mermaid-container">
+      <div class="mermaid-label">Architecture: Complete Request Flow</div>
+      <div class="mermaid">
+flowchart TB
+    subgraph UI["USER-FACING INTERFACES"]
+        direction LR
+        OW["Open WebUI<br/><small>/v1/chat/completions</small>"]
+        GR["Gradio App<br/><small>gradio_app.py</small>"]
+        CLI["Agent CLI<br/><small>agent_cli.py</small>"]
+        A2A["A2A Protocol<br/><small>POST /a2a</small>"]
+        REST["REST API<br/><small>POST /query</small>"]
+    end
+
+    subgraph MAIN["FASTAPI APPLICATION — main.py"]
+        direction TB
+        ROUTER["OpenAI-Compatible Router<br/><small>/v1/models + /v1/chat/completions</small>"]
+        A2AH["A2AHandler<br/><small>JSON-RPC 2.0 dispatch</small>"]
+        QUERY["Query Endpoint<br/><small>/query</small>"]
+    end
+
+    subgraph LOCAL["LocalRAGAgent"]
+        direction TB
+        COT_CHECK{"use_cot?"}
+
+        subgraph PATHB["Path B: CoT Agent Factory"]
+            direction TB
+            PLAN["PlannerAgent<br/><small>plan(query, context)</small>"]
+            RES["ResearchAgent<br/><small>research(query, step)</small>"]
+            REASON["ReasoningAgent<br/><small>reason(query, step, findings)</small>"]
+            SYNTH["SynthesisAgent<br/><small>synthesize(query, steps)</small>"]
+            PLAN --> RES --> REASON --> SYNTH
+        end
+    end
+
+    subgraph RAGENSEMBLE["RAGReasoningEnsemble"]
+        direction TB
+        RAG_CTX["_retrieve_context()<br/><small>collection_map lookup</small>"]
+        AUG["_build_augmented_prompt()<br/><small>context + question template</small>"]
+
+        subgraph ENSEMBLE["ReasoningEnsemble (agent-reasoning)"]
+            direction TB
+            PARALLEL["Parallel Execution<br/><small>ThreadPoolExecutor, 10 workers</small>"]
+            AGENTS["9 BaseAgent Subclasses<br/><small>Standard, CoT, ToT, ReAct,<br/>SelfReflection, Consistency,<br/>Decomposed, LeastToMost, Recursive</small>"]
+            VOTE["Majority Vote<br/><small>SentenceTransformer embeddings<br/>cosine similarity clustering</small>"]
+            PARALLEL --> AGENTS --> VOTE
+        end
+
+        RAG_CTX --> AUG --> PARALLEL
+    end
+
+    subgraph INFRA["INFRASTRUCTURE"]
+        direction LR
+        OLLAMA["Ollama<br/><small>gemma3:270m</small>"]
+        ORADB[("Oracle AI Database 26ai<br/><small>Vector Store + Event Logger</small>")]
+    end
+
+    OW --> ROUTER
+    GR --> QUERY
+    CLI --> QUERY
+    A2A --> A2AH
+    REST --> QUERY
+
+    ROUTER --> RAGENSEMBLE
+    A2AH --> RAGENSEMBLE
+    QUERY --> LOCAL
+
+    COT_CHECK -- "False" --> RAGENSEMBLE
+    COT_CHECK -- "True" --> PLAN
+
+    RAG_CTX --> ORADB
+    AGENTS --> OLLAMA
+    PATHB --> OLLAMA
+    RAGENSEMBLE -.->|"log_reasoning_event()"| ORADB
+    PATHB --> ORADB
+
+    style UI fill:#0d2828,stroke:#ffffff44,color:#e8f0f0
+    style MAIN fill:#0d2828,stroke:#ffffff44,color:#e8f0f0
+    style LOCAL fill:#122424,stroke:#bfa76a44,color:#bfa76a
+    style RAGENSEMBLE fill:#0d2222,stroke:#00e5ff44,color:#00e5ff
+    style ENSEMBLE fill:#0a1a1a,stroke:#00e5ff66,color:#00e5ff
+    style PATHB fill:#1a2a1a,stroke:#bfa76a44,color:#bfa76a
+    style INFRA fill:#0d1a1a,stroke:#00e5ff44,color:#e8f0f0
+    style COT_CHECK fill:#1a2a2a,stroke:#bfa76a,color:#bfa76a
+
+    style OW fill:#0d3b3b,stroke:#00e5ff,color:#e8f0f0
+    style GR fill:#0d3b3b,stroke:#00e5ff,color:#e8f0f0
+    style CLI fill:#0d3b3b,stroke:#00e5ff,color:#e8f0f0
+    style A2A fill:#0d3b3b,stroke:#00e5ff,color:#e8f0f0
+    style REST fill:#0d3b3b,stroke:#00e5ff,color:#e8f0f0
+    style OLLAMA fill:#1a2a1a,stroke:#7ec699,color:#7ec699
+    style ORADB fill:#1a1a0a,stroke:#bfa76a,color:#bfa76a
+      </div>
+    </div>
+
+    <!-- Key Integration Points Summary -->
+    <div class="subsection">
+      <h3 class="subsection-title">Key Integration Points</h3>
+      <div class="card-grid">
+        <div class="info-card">
+          <div class="card-title">Composition over Inheritance</div>
+          <div class="card-desc">
+            RAGReasoningEnsemble wraps ReasoningEnsemble via composition
+            (<code>self.ensemble = ReasoningEnsemble(...)</code>), not subclassing.
+            This keeps the library layer clean and testable independently.
+          </div>
+          <span class="card-tag">Design Pattern</span>
+        </div>
+        <div class="info-card">
+          <div class="card-title">Model ID Routing</div>
+          <div class="card-desc">
+            When Open WebUI sends model="cot-rag", the router looks up REASONING_MODELS
+            to extract strategy="cot" and rag=True, then dispatches to RAGReasoningEnsemble
+            with the appropriate flags.
+          </div>
+          <span class="card-tag">API Layer</span>
+        </div>
+        <div class="info-card">
+          <div class="card-title">Dual-Path RAG</div>
+          <div class="card-desc">
+            The REST /query endpoint uses LocalRAGAgent (CoT factory or direct),
+            while /v1/chat/completions uses RAGReasoningEnsemble.
+            Both converge on OraDBVectorStore.
+          </div>
+          <span class="card-tag">Architecture</span>
+        </div>
+        <div class="info-card">
+          <div class="card-title">Event Persistence</div>
+          <div class="card-desc">
+            Every reasoning execution, API call, document upload, and A2A interaction
+            is logged to Oracle AI Database through OraDBEventLogger, creating a
+            full audit trail across 6 event tables.
+          </div>
+          <span class="card-tag">Observability</span>
+        </div>
+        <div class="info-card">
+          <div class="card-title">Async/Threading Boundary</div>
+          <div class="card-desc">
+            FastAPI is async. ReasoningEnsemble uses ThreadPoolExecutor to run
+            synchronous agent.run() calls in parallel without blocking the event loop.
+            The bridge is <code>loop.run_in_executor()</code>.
+          </div>
+          <span class="card-tag">Concurrency</span>
+        </div>
+        <div class="info-card">
+          <div class="card-title">Semantic Majority Voting</div>
+          <div class="card-desc">
+            Unlike simple string comparison, the ensemble uses SentenceTransformer
+            (all-MiniLM-L6-v2) to embed responses, compute cosine similarity,
+            and cluster by a 0.85 threshold. Largest cluster wins.
+          </div>
+          <span class="card-tag">Consensus</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ============================================================ -->
+  <!-- DEPENDENCY DIAGRAM -->
+  <!-- ============================================================ -->
+  <section class="layer-section">
+    <div class="layer-header">
+      <div class="layer-indicator foundation"></div>
+      <div class="layer-title-group">
+        <div class="layer-number">Appendix</div>
+        <h2 class="layer-title" style="color: var(--text-secondary);">Dependency & Import Map</h2>
+      </div>
+    </div>
+
+    <div class="mermaid-container">
+      <div class="mermaid-label">Import Dependencies Between Modules</div>
+      <div class="mermaid">
+flowchart LR
+    subgraph LIB["agent-reasoning (PyPI)"]
+        BASE["agents/base.py<br/><small>BaseAgent</small>"]
+        AGENTS["agents/__init__.py<br/><small>AGENT_MAP</small>"]
+        CLIENT["client.py<br/><small>OllamaClient</small>"]
+        ENS["ensemble.py<br/><small>ReasoningEnsemble</small>"]
+        INT["interceptor.py<br/><small>ReasoningInterceptor</small>"]
+    end
+
+    subgraph RAG["agentic_rag"]
+        RAGE["reasoning/rag_ensemble.py<br/><small>RAGReasoningEnsemble</small>"]
+        MAIN2["main.py<br/><small>FastAPI app</small>"]
+        OAI["openai_compat.py<br/><small>/v1 router</small>"]
+        A2AH2["a2a_handler.py<br/><small>A2AHandler</small>"]
+        LRAG["local_rag_agent.py<br/><small>LocalRAGAgent</small>"]
+        FACT["agents/agent_factory.py<br/><small>create_agents()</small>"]
+        STOR["OraDBVectorStore.py"]
+        LOG["OraDBEventLogger.py"]
+    end
+
+    BASE --> AGENTS
+    CLIENT --> BASE
+    AGENTS --> ENS
+    AGENTS --> INT
+
+    ENS --> RAGE
+    INT --> OAI
+    AGENTS --> RAGE
+
+    RAGE --> MAIN2
+    RAGE --> OAI
+    RAGE --> A2AH2
+    LRAG --> MAIN2
+    FACT --> LRAG
+    STOR --> RAGE
+    STOR --> LRAG
+    STOR --> A2AH2
+    LOG --> RAGE
+    LOG --> MAIN2
+    OAI --> MAIN2
+    A2AH2 --> MAIN2
+
+    style LIB fill:#0a1a1a,stroke:#00e5ff44,color:#00e5ff
+    style RAG fill:#0d1a0a,stroke:#bfa76a44,color:#bfa76a
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ============================================================ -->
+  <!-- FOOTER -->
+  <!-- ============================================================ -->
+  <footer class="page-footer">
+    <p class="footer-text">
+      agent-reasoning-integration &mdash; Technical Integration Blueprint
+      &nbsp;|&nbsp; agent-reasoning &rarr; agentic_rag
+      &nbsp;|&nbsp; Oracle AI Database 26ai
+    </p>
+  </footer>
+
+</div>
+
+</body>
+</html>

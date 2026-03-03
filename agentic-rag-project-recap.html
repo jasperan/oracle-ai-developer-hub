@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentic RAG — Project Recap Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+  /* ── Reset & Base ─────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-deep:      #0c0f1d;
+    --bg-card:      #111529;
+    --bg-card-alt:  #161b33;
+    --bg-surface:   #1a2040;
+    --border:       #1e2a4a;
+    --border-light: #253358;
+    --text-primary: #c8d6e5;
+    --text-muted:   #7f8ea3;
+    --text-dim:     #4a5568;
+    --accent-blue:  #4fc3f7;
+    --accent-purple:#7c4dff;
+    --accent-green: #66bb6a;
+    --accent-amber: #ffa726;
+    --accent-red:   #ef5350;
+    --accent-cyan:  #26c6da;
+    --accent-teal:  #009688;
+    --font-heading: 'DM Sans', sans-serif;
+    --font-body:    'Inter', sans-serif;
+    --font-mono:    'JetBrains Mono', monospace;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-light) var(--bg-deep);
+  }
+
+  body {
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg-deep); }
+  ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+
+  /* ── Layout ───────────────────────────────────────────────── */
+  .dashboard {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 40px 48px 80px;
+  }
+
+  /* ── Header ───────────────────────────────────────────────── */
+  .header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+
+  .header-left h1 {
+    font-family: var(--font-heading);
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+
+  .header-left h1 span {
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .header-left .subtitle {
+    font-family: var(--font-body);
+    font-size: 15px;
+    color: var(--text-muted);
+    font-weight: 400;
+    max-width: 560px;
+    line-height: 1.5;
+  }
+
+  .header-left .path {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 8px;
+    padding: 4px 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    display: inline-block;
+  }
+
+  .header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+  }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 6px 14px;
+    border-radius: 4px;
+    background: rgba(102, 187, 106, 0.1);
+    color: var(--accent-green);
+    border: 1px solid rgba(102, 187, 106, 0.25);
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent-green);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(102, 187, 106, 0.4); }
+    50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(102, 187, 106, 0); }
+  }
+
+  .model-badge {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--accent-blue);
+    padding: 4px 10px;
+    background: rgba(79, 195, 247, 0.08);
+    border: 1px solid rgba(79, 195, 247, 0.2);
+    border-radius: 4px;
+  }
+
+  .timestamp {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  /* ── Stats Row ────────────────────────────────────────────── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .stat-card:hover {
+    border-color: var(--border-light);
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .stat-card:hover::before { opacity: 1; }
+
+  .stat-label {
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-family: var(--font-heading);
+    font-size: 32px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+  }
+
+  .stat-value .unit {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: 4px;
+  }
+
+  .stat-detail {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 6px;
+  }
+
+  /* Counter animation */
+  .stat-value[data-target] {
+    transition: color 0.3s;
+  }
+
+  /* ── Section ──────────────────────────────────────────────── */
+  .section {
+    margin-bottom: 48px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-number {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--accent-blue);
+    background: rgba(79, 195, 247, 0.08);
+    border: 1px solid rgba(79, 195, 247, 0.2);
+    padding: 3px 10px;
+    border-radius: 3px;
+    letter-spacing: 0.5px;
+  }
+
+  .section-title {
+    font-family: var(--font-heading);
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.3px;
+  }
+
+  .section-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── Cards ────────────────────────────────────────────────── */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+
+  .card-title {
+    font-family: var(--font-heading);
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  .dot-blue    { background: var(--accent-blue); }
+  .dot-purple  { background: var(--accent-purple); }
+  .dot-green   { background: var(--accent-green); }
+  .dot-amber   { background: var(--accent-amber); }
+  .dot-red     { background: var(--accent-red); }
+  .dot-cyan    { background: var(--accent-cyan); }
+  .dot-teal    { background: var(--accent-teal); }
+
+  /* ── Architecture Diagram ─────────────────────────────────── */
+  .diagram-container {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 32px;
+    overflow-x: auto;
+  }
+
+  .diagram-container .mermaid {
+    display: flex;
+    justify-content: center;
+  }
+
+  /* ── Dependency Grid ──────────────────────────────────────── */
+  .dep-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+  }
+
+  .dep-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    transition: border-color 0.2s, transform 0.15s;
+  }
+
+  .dep-card:hover {
+    border-color: var(--accent-blue);
+    transform: translateY(-1px);
+  }
+
+  .dep-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .dep-info h4 {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: #fff;
+    margin-bottom: 2px;
+  }
+
+  .dep-info p {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+
+  .dep-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    display: inline-block;
+    margin-top: 4px;
+  }
+
+  .dep-tag-core     { background: rgba(79, 195, 247, 0.12); color: var(--accent-blue); }
+  .dep-tag-db       { background: rgba(239, 83, 80, 0.12); color: var(--accent-red); }
+  .dep-tag-ingest   { background: rgba(102, 187, 106, 0.12); color: var(--accent-green); }
+  .dep-tag-ui       { background: rgba(124, 77, 255, 0.12); color: var(--accent-purple); }
+  .dep-tag-fallback { background: rgba(255, 167, 38, 0.12); color: var(--accent-amber); }
+
+  /* ── API Table ────────────────────────────────────────────── */
+  .api-table-wrap {
+    overflow-x: auto;
+  }
+
+  .api-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .api-table thead th {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    padding: 10px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-card-alt);
+  }
+
+  .api-table tbody td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .api-table tbody tr:hover {
+    background: rgba(79, 195, 247, 0.03);
+  }
+
+  .api-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .method-badge {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 3px;
+    letter-spacing: 0.5px;
+    display: inline-block;
+    min-width: 42px;
+    text-align: center;
+  }
+
+  .method-get {
+    background: rgba(79, 195, 247, 0.12);
+    color: var(--accent-blue);
+    border: 1px solid rgba(79, 195, 247, 0.25);
+  }
+
+  .method-post {
+    background: rgba(102, 187, 106, 0.12);
+    color: var(--accent-green);
+    border: 1px solid rgba(102, 187, 106, 0.25);
+  }
+
+  .endpoint-path {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: #fff;
+  }
+
+  .endpoint-desc {
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .endpoint-proto {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: rgba(124, 77, 255, 0.1);
+    color: var(--accent-purple);
+    border: 1px solid rgba(124, 77, 255, 0.2);
+  }
+
+  /* ── Event Table Cards ────────────────────────────────────── */
+  .events-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+
+  .event-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    position: relative;
+    transition: border-color 0.2s;
+  }
+
+  .event-card:hover { border-color: var(--border-light); }
+
+  .event-card-name {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: #fff;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .event-card-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  .event-card-fields {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .event-field {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    background: var(--bg-surface);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+  }
+
+  /* ── Deployment Cards ─────────────────────────────────────── */
+  .deploy-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+
+  .deploy-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    transition: border-color 0.2s;
+  }
+
+  .deploy-card:hover { border-color: var(--border-light); }
+
+  .deploy-card-title {
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .deploy-card-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+
+  .terminal {
+    background: #0a0d18;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 12px 14px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--accent-green);
+    line-height: 1.7;
+    overflow-x: auto;
+    position: relative;
+  }
+
+  .terminal::before {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 20px;
+    margin-bottom: 8px;
+    background: url("data:image/svg+xml,%3Csvg width='54' height='14' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='7' cy='7' r='5' fill='%23ef5350' opacity='0.7'/%3E%3Ccircle cx='23' cy='7' r='5' fill='%23ffa726' opacity='0.7'/%3E%3Ccircle cx='39' cy='7' r='5' fill='%2366bb6a' opacity='0.7'/%3E%3C/svg%3E") no-repeat left center;
+    background-size: 54px 14px;
+  }
+
+  .terminal .prompt { color: var(--accent-blue); }
+  .terminal .flag   { color: var(--accent-purple); }
+  .terminal .arg    { color: var(--accent-amber); }
+  .terminal .comment{ color: var(--text-dim); }
+
+  /* ── Open WebUI Section ───────────────────────────────────── */
+  .webui-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+
+  .webui-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    transition: border-color 0.2s;
+  }
+
+  .webui-card:hover { border-color: var(--border-light); }
+
+  .webui-card-title {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: #fff;
+    margin-bottom: 6px;
+  }
+
+  .webui-card-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-bottom: 10px;
+  }
+
+  .webui-card-feature {
+    font-size: 11px;
+    color: var(--text-dim);
+    padding-left: 12px;
+    position: relative;
+    margin-bottom: 3px;
+  }
+
+  .webui-card-feature::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 6px;
+    width: 4px;
+    height: 4px;
+    border-radius: 1px;
+    background: var(--accent-blue);
+  }
+
+  .auto-persist-box {
+    background: var(--bg-card-alt);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent-purple);
+    border-radius: 0 6px 6px 0;
+    padding: 16px;
+    margin-top: 14px;
+  }
+
+  .auto-persist-title {
+    font-family: var(--font-heading);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent-purple);
+    margin-bottom: 6px;
+  }
+
+  .auto-persist-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  /* ── Code Patterns ────────────────────────────────────────── */
+  .patterns-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+
+  .pattern-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    transition: border-color 0.2s;
+  }
+
+  .pattern-card:hover { border-color: var(--border-light); }
+
+  .pattern-card-title {
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .pattern-card-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  .code-snippet {
+    background: #0a0d18;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px 14px;
+    margin-top: 10px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-primary);
+    overflow-x: auto;
+    line-height: 1.6;
+  }
+
+  .code-snippet .kw  { color: var(--accent-purple); }
+  .code-snippet .fn  { color: var(--accent-blue); }
+  .code-snippet .str { color: var(--accent-green); }
+  .code-snippet .num { color: var(--accent-amber); }
+  .code-snippet .cm  { color: var(--text-dim); }
+  .code-snippet .op  { color: var(--accent-red); }
+
+  /* ── Dependency Diagram ───────────────────────────────────── */
+  .dep-diagram-container {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 28px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+  }
+
+  .dep-diagram-container .mermaid {
+    display: flex;
+    justify-content: center;
+  }
+
+  /* ── Footer ───────────────────────────────────────────────── */
+  .footer {
+    text-align: center;
+    padding-top: 32px;
+    border-top: 1px solid var(--border);
+    margin-top: 20px;
+  }
+
+  .footer p {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+  }
+
+  .footer .sep {
+    display: inline-block;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--border-light);
+    margin: 0 10px;
+    vertical-align: middle;
+  }
+
+  /* ── TOC Nav ──────────────────────────────────────────────── */
+  .toc-nav {
+    position: fixed;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .toc-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border-light);
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    padding: 0;
+    position: relative;
+  }
+
+  .toc-dot:hover, .toc-dot.active {
+    background: var(--accent-blue);
+    transform: scale(1.4);
+  }
+
+  .toc-dot::after {
+    content: attr(data-label);
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--accent-blue);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .toc-dot:hover::after { opacity: 1; }
+
+  /* ── Two Column Layout ────────────────────────────────────── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  /* ── Responsive ───────────────────────────────────────────── */
+  @media (max-width: 1200px) {
+    .stats-row { grid-template-columns: repeat(3, 1fr); }
+    .events-grid, .deploy-grid, .webui-grid { grid-template-columns: repeat(2, 1fr); }
+    .patterns-grid { grid-template-columns: 1fr; }
+    .two-col { grid-template-columns: 1fr; }
+    .toc-nav { display: none; }
+  }
+
+  @media (max-width: 768px) {
+    .dashboard { padding: 24px 16px 60px; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .header { flex-direction: column; gap: 16px; }
+    .header-right { align-items: flex-start; }
+    .events-grid, .deploy-grid, .webui-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ── Mermaid override ─────────────────────────────────────── */
+  .mermaid svg {
+    max-width: 100%;
+  }
+
+  /* ── Animation: fade-in on scroll ─────────────────────────── */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<!-- Table of Contents Navigation -->
+<nav class="toc-nav" aria-label="Section navigation">
+  <button class="toc-dot" data-label="Identity" onclick="document.getElementById('s1').scrollIntoView({behavior:'smooth'})"></button>
+  <button class="toc-dot" data-label="Architecture" onclick="document.getElementById('s2').scrollIntoView({behavior:'smooth'})"></button>
+  <button class="toc-dot" data-label="Dependencies" onclick="document.getElementById('s3').scrollIntoView({behavior:'smooth'})"></button>
+  <button class="toc-dot" data-label="API Surface" onclick="document.getElementById('s4').scrollIntoView({behavior:'smooth'})"></button>
+  <button class="toc-dot" data-label="Events" onclick="document.getElementById('s5').scrollIntoView({behavior:'smooth'})"></button>
+  <button class="toc-dot" data-label="Deployment" onclick="document.getElementById('s6').scrollIntoView({behavior:'smooth'})"></button>
+  <button class="toc-dot" data-label="Open WebUI" onclick="document.getElementById('s7').scrollIntoView({behavior:'smooth'})"></button>
+  <button class="toc-dot" data-label="Patterns" onclick="document.getElementById('s8').scrollIntoView({behavior:'smooth'})"></button>
+</nav>
+
+<div class="dashboard">
+
+  <!-- ═══════════ HEADER ═══════════ -->
+  <header class="header">
+    <div class="header-left">
+      <h1>Agentic <span>RAG</span></h1>
+      <p class="subtitle">Multi-agent retrieval-augmented generation system with 9 reasoning strategies, powered by Oracle AI Database and local Ollama LLMs. A complete RAG pipeline from document ingestion to intelligent query synthesis.</p>
+      <div class="path">oracle-ai-developer-hub/apps/agentic_rag</div>
+    </div>
+    <div class="header-right">
+      <div class="status-badge"><span class="status-dot"></span> Active Development</div>
+      <div class="model-badge">Default: gemma3:270m via Ollama</div>
+      <div class="timestamp">Dashboard generated 2026-02-27</div>
+    </div>
+  </header>
+
+  <!-- ═══════════ STATS ROW ═══════════ -->
+  <div id="s1" class="stats-row fade-in">
+    <div class="stat-card">
+      <div class="stat-label">Vector Collections</div>
+      <div class="stat-value" data-target="4">0</div>
+      <div class="stat-detail">Oracle AI Vector Search</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Reasoning Strategies</div>
+      <div class="stat-value" data-target="9">0</div>
+      <div class="stat-detail">x2 modes (ensemble)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">UI Interfaces</div>
+      <div class="stat-value" data-target="4">0</div>
+      <div class="stat-detail">Gradio, WebUI, API, CLI</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">A2A Methods</div>
+      <div class="stat-value" data-target="12">0</div>
+      <div class="stat-detail">JSON-RPC 2.0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Event Tables</div>
+      <div class="stat-value" data-target="6">0</div>
+      <div class="stat-detail">Full observability</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">OpenAI-compat Models</div>
+      <div class="stat-value" data-target="18">0</div>
+      <div class="stat-detail">via /v1/models</div>
+    </div>
+  </div>
+
+  <!-- ═══════════ 2. ARCHITECTURE MAP ═══════════ -->
+  <section id="s2" class="section fade-in">
+    <div class="section-header">
+      <span class="section-number">02</span>
+      <h2 class="section-title">Architecture Map</h2>
+      <span class="section-line"></span>
+    </div>
+    <div class="diagram-container">
+      <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#1a2040', 'primaryTextColor': '#c8d6e5', 'primaryBorderColor': '#4fc3f7', 'lineColor': '#4fc3f7', 'secondaryColor': '#161b33', 'tertiaryColor': '#111529', 'edgeLabelBackground': '#0c0f1d', 'clusterBkg': '#111529', 'clusterBorder': '#1e2a4a', 'nodeTextColor': '#c8d6e5' }}}%%
+graph TB
+    subgraph INPUT["INPUT LAYER"]
+        direction LR
+        PDF["PDF Documents<br/><i>Docling</i>"]
+        WEB["Web Pages<br/><i>Trafilatura</i>"]
+        CODE["Code Repos<br/><i>Gitingest</i>"]
+    end
+
+    subgraph PROCESSING["PROCESSING PIPELINE"]
+        direction LR
+        SPLIT["OracleTextSplitter<br/>Recursive chunking"]
+        EMBED["OracleEmbeddings<br/>all-MiniLM-L6-v2"]
+        VS["OracleVS<br/>Vector store"]
+    end
+
+    subgraph STORAGE["ORACLE AI DATABASE"]
+        direction LR
+        C1["PDFCOLLECTION"]
+        C2["CODECOLLECTION"]
+        C3["WEBCOLLECTION"]
+        C4["LOCALCOLLECTION"]
+        ET["6 Event Tables<br/>API | MODEL | DOC<br/>INGEST | QUERY | A2A"]
+    end
+
+    subgraph INTELLIGENCE["INTELLIGENCE LAYER"]
+        AGENT["LocalRAGAgent<br/>Core orchestrator"]
+        FACTORY["Agent Factory"]
+        PLAN["Planner Agent"]
+        RES["Researcher Agent"]
+        REAS["Reasoner Agent"]
+        SYN["Synthesizer Agent"]
+        ENSEMBLE["RAGReasoningEnsemble<br/>9 strategies x 2 modes"]
+    end
+
+    subgraph OUTPUT["OUTPUT INTERFACES"]
+        direction LR
+        GR["Gradio UI<br/>:7860"]
+        OW["Open WebUI<br/>18 models"]
+        FA["FastAPI<br/>OpenAI-compat"]
+        CLI["CLI<br/>Terminal"]
+        A2A["A2A Handler<br/>JSON-RPC 2.0"]
+    end
+
+    PDF --> SPLIT
+    WEB --> SPLIT
+    CODE --> SPLIT
+    SPLIT --> EMBED --> VS
+
+    VS --> C1
+    VS --> C2
+    VS --> C3
+    VS --> C4
+
+    AGENT --> FACTORY
+    FACTORY --> PLAN
+    FACTORY --> RES
+    FACTORY --> REAS
+    FACTORY --> SYN
+    AGENT --> ENSEMBLE
+
+    C1 & C2 & C3 & C4 --> AGENT
+    AGENT --> ET
+
+    AGENT --> GR
+    AGENT --> OW
+    AGENT --> FA
+    AGENT --> CLI
+    AGENT --> A2A
+
+    style INPUT fill:#111529,stroke:#4fc3f7,stroke-width:1px
+    style PROCESSING fill:#111529,stroke:#7c4dff,stroke-width:1px
+    style STORAGE fill:#111529,stroke:#ef5350,stroke-width:1px
+    style INTELLIGENCE fill:#111529,stroke:#66bb6a,stroke-width:1px
+    style OUTPUT fill:#111529,stroke:#ffa726,stroke-width:1px
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 3. DEPENDENCY GRAPH ═══════════ -->
+  <section id="s3" class="section fade-in">
+    <div class="section-header">
+      <span class="section-number">03</span>
+      <h2 class="section-title">Dependency Graph</h2>
+      <span class="section-line"></span>
+    </div>
+
+    <div class="dep-diagram-container">
+      <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#1a2040', 'primaryTextColor': '#c8d6e5', 'primaryBorderColor': '#4fc3f7', 'lineColor': '#253358', 'secondaryColor': '#161b33', 'tertiaryColor': '#111529', 'nodeTextColor': '#c8d6e5' }}}%%
+graph LR
+    APP(("Agentic<br/>RAG"))
+
+    subgraph CORE["CORE"]
+        LC["langchain-oracledb"]
+        ODB["oracledb"]
+        AR["agent-reasoning"]
+        OL["ollama"]
+    end
+
+    subgraph INGEST["INGESTION"]
+        DOC["docling"]
+        TRA["trafilatura"]
+        GIT["gitingest"]
+    end
+
+    subgraph IFACE["INTERFACES"]
+        FAPI["fastapi"]
+        GRAD["gradio"]
+        OWUI["open-webui"]
+    end
+
+    subgraph FALLBACK["FALLBACKS"]
+        CHR["chromadb"]
+        ST["sentence-transformers"]
+    end
+
+    APP --> LC & ODB & AR & OL
+    APP --> DOC & TRA & GIT
+    APP --> FAPI & GRAD & OWUI
+    APP -.-> CHR & ST
+
+    style APP fill:#4fc3f7,stroke:#4fc3f7,color:#0c0f1d,font-weight:bold
+    style CORE fill:#111529,stroke:#4fc3f7,stroke-width:1px
+    style INGEST fill:#111529,stroke:#66bb6a,stroke-width:1px
+    style IFACE fill:#111529,stroke:#7c4dff,stroke-width:1px
+    style FALLBACK fill:#111529,stroke:#ffa726,stroke-width:1px,stroke-dasharray:5 5
+      </div>
+    </div>
+
+    <div class="dep-grid">
+      <div class="dep-card">
+        <div class="dep-icon" style="background:rgba(79,195,247,0.12);color:var(--accent-blue);">LC</div>
+        <div class="dep-info">
+          <h4>langchain-oracledb</h4>
+          <p>Oracle AI Vector Search integration for LangChain. Provides OracleVS, OracleEmbeddings, OracleTextSplitter.</p>
+          <span class="dep-tag dep-tag-core">core</span> <span class="dep-tag dep-tag-db">database</span>
+        </div>
+      </div>
+      <div class="dep-card">
+        <div class="dep-icon" style="background:rgba(239,83,80,0.12);color:var(--accent-red);">DB</div>
+        <div class="dep-info">
+          <h4>oracledb</h4>
+          <p>Python driver for Oracle Database. Thick/thin client for connection pooling and session management.</p>
+          <span class="dep-tag dep-tag-db">database</span>
+        </div>
+      </div>
+      <div class="dep-card">
+        <div class="dep-icon" style="background:rgba(102,187,106,0.12);color:var(--accent-green);">AR</div>
+        <div class="dep-info">
+          <h4>agent-reasoning</h4>
+          <p>9 reasoning strategies library: CoT, ToT, ReAct, MCTS, R1, Beam Search, Self-Consistency, PRM, Meta-Reasoning.</p>
+          <span class="dep-tag dep-tag-core">core</span>
+        </div>
+      </div>
+      <div class="dep-card">
+        <div class="dep-icon" style="background:rgba(79,195,247,0.12);color:var(--accent-blue);">OL</div>
+        <div class="dep-info">
+          <h4>ollama</h4>
+          <p>Local LLM inference server. Default model: gemma3:270m. No cloud dependency.</p>
+          <span class="dep-tag dep-tag-core">core</span>
+        </div>
+      </div>
+      <div class="dep-card">
+        <div class="dep-icon" style="background:rgba(102,187,106,0.12);color:var(--accent-green);">DL</div>
+        <div class="dep-info">
+          <h4>docling</h4>
+          <p>PDF document processing with structure extraction. Handles tables, headers, and metadata.</p>
+          <span class="dep-tag dep-tag-ingest">ingestion</span>
+        </div>
+      </div>
+      <div class="dep-card">
+        <div class="dep-icon" style="background:rgba(102,187,106,0.12);color:var(--accent-green);">TF</div>
+        <div class="dep-info">
+          <h4>trafilatura</h4>
+          <p>Web content extraction. Cleans HTML to readable text with metadata preservation.</p>
+          <span class="dep-tag dep-tag-ingest">ingestion</span>
+        </div>
+      </div>
+      <div class="dep-card">
+        <div class="dep-icon" style="background:rgba(102,187,106,0.12);color:var(--accent-green);">GI</div>
+        <div class="dep-info">
+          <h4>gitingest</h4>
+          <p>Code repository ingestion. Processes Git repos into document chunks for RAG indexing.</p>
+          <span class="dep-tag dep-tag-ingest">ingestion</span>
+        </div>
+      </div>
+      <div class="dep-card">
+        <div class="dep-icon" style="background:rgba(124,77,255,0.12);color:var(--accent-purple);">FA</div>
+        <div class="dep-info">
+          <h4>fastapi</h4>
+          <p>High-performance API framework. Serves OpenAI-compatible endpoints and A2A protocol.</p>
+          <span class="dep-tag dep-tag-ui">interface</span>
+        </div>
+      </div>
+      <div class="dep-card">
+        <div class="dep-icon" style="background:rgba(124,77,255,0.12);color:var(--accent-purple);">GR</div>
+        <div class="dep-info">
+          <h4>gradio</h4>
+          <p>Interactive web UI with tabbed interface for querying, uploading documents, and monitoring.</p>
+          <span class="dep-tag dep-tag-ui">interface</span>
+        </div>
+      </div>
+      <div class="dep-card">
+        <div class="dep-icon" style="background:rgba(124,77,255,0.12);color:var(--accent-purple);">WU</div>
+        <div class="dep-info">
+          <h4>open-webui</h4>
+          <p>Full-featured chat UI. Connects via OpenAI-compatible API exposing 18 reasoning models.</p>
+          <span class="dep-tag dep-tag-ui">interface</span>
+        </div>
+      </div>
+      <div class="dep-card">
+        <div class="dep-icon" style="background:rgba(255,167,38,0.12);color:var(--accent-amber);">CR</div>
+        <div class="dep-info">
+          <h4>chromadb</h4>
+          <p>Fallback vector store when Oracle DB is unavailable. Same interface abstraction.</p>
+          <span class="dep-tag dep-tag-fallback">fallback</span>
+        </div>
+      </div>
+      <div class="dep-card">
+        <div class="dep-icon" style="background:rgba(255,167,38,0.12);color:var(--accent-amber);">ST</div>
+        <div class="dep-info">
+          <h4>sentence-transformers</h4>
+          <p>Fallback embedding model. Used when OracleEmbeddings is not configured.</p>
+          <span class="dep-tag dep-tag-fallback">fallback</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 4. API SURFACE ═══════════ -->
+  <section id="s4" class="section fade-in">
+    <div class="section-header">
+      <span class="section-number">04</span>
+      <h2 class="section-title">API Surface</h2>
+      <span class="section-line"></span>
+    </div>
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <div class="api-table-wrap">
+        <table class="api-table">
+          <thead>
+            <tr>
+              <th style="width: 70px;">Method</th>
+              <th style="width: 240px;">Endpoint</th>
+              <th>Description</th>
+              <th style="width: 120px;">Protocol</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="method-badge method-post">POST</span></td>
+              <td><span class="endpoint-path">/upload/pdf</span></td>
+              <td class="endpoint-desc">Upload and process PDF documents via Docling. Chunks, embeds, and stores in PDFCOLLECTION.</td>
+              <td><span class="endpoint-proto">REST</span></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge method-post">POST</span></td>
+              <td><span class="endpoint-path">/query</span></td>
+              <td class="endpoint-desc">Execute a RAG query with optional reasoning strategy and collection targeting.</td>
+              <td><span class="endpoint-proto">REST</span></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge method-post">POST</span></td>
+              <td><span class="endpoint-path">/a2a</span></td>
+              <td class="endpoint-desc">Agent-to-Agent protocol endpoint. Accepts JSON-RPC 2.0 messages for inter-agent communication.</td>
+              <td><span class="endpoint-proto">A2A / JSON-RPC</span></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge method-get">GET</span></td>
+              <td><span class="endpoint-path">/agent_card</span></td>
+              <td class="endpoint-desc">Returns the agent capability card describing skills, supported methods, and metadata.</td>
+              <td><span class="endpoint-proto">A2A</span></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge method-post">POST</span></td>
+              <td><span class="endpoint-path">/v1/chat/completions</span></td>
+              <td class="endpoint-desc">OpenAI-compatible chat completions. Routes to reasoning models via model name.</td>
+              <td><span class="endpoint-proto">OpenAI</span></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge method-get">GET</span></td>
+              <td><span class="endpoint-path">/v1/models</span></td>
+              <td class="endpoint-desc">Lists all 18 available reasoning models. Each maps to a strategy + mode combination.</td>
+              <td><span class="endpoint-proto">OpenAI</span></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge method-get">GET</span></td>
+              <td><span class="endpoint-path">/events/statistics</span></td>
+              <td class="endpoint-desc">Aggregated event monitoring. Counts, average response times, error rates across all tables.</td>
+              <td><span class="endpoint-proto">REST</span></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge method-get">GET</span></td>
+              <td><span class="endpoint-path">/events/{type}</span></td>
+              <td class="endpoint-desc">Event details filtered by type: all, a2a, api, model, document, query.</td>
+              <td><span class="endpoint-proto">REST</span></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge method-post">POST</span></td>
+              <td><span class="endpoint-path">/sync/embeddings</span></td>
+              <td class="endpoint-desc">Synchronize document embeddings from Open WebUI into Oracle Vector Store.</td>
+              <td><span class="endpoint-proto">REST</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 5. EVENT LOGGING SYSTEM ═══════════ -->
+  <section id="s5" class="section fade-in">
+    <div class="section-header">
+      <span class="section-number">05</span>
+      <h2 class="section-title">Event Logging System</h2>
+      <span class="section-line"></span>
+    </div>
+    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Six Oracle Database tables provide full observability across every layer of the system. Every operation is tracked with timestamps, durations, and contextual metadata.</p>
+    <div class="events-grid">
+      <div class="event-card">
+        <div class="event-card-name"><span class="dot dot-blue"></span>API_EVENTS</div>
+        <div class="event-card-desc">Tracks all HTTP endpoint invocations. Captures request method, path, status code, response time, and client metadata.</div>
+        <div class="event-card-fields">
+          <span class="event-field">endpoint</span>
+          <span class="event-field">method</span>
+          <span class="event-field">status_code</span>
+          <span class="event-field">response_ms</span>
+          <span class="event-field">client_ip</span>
+          <span class="event-field">timestamp</span>
+        </div>
+      </div>
+      <div class="event-card">
+        <div class="event-card-name"><span class="dot dot-purple"></span>MODEL_EVENTS</div>
+        <div class="event-card-desc">Records every LLM invocation. Stores model name, prompt, response, token counts, and generation latency.</div>
+        <div class="event-card-fields">
+          <span class="event-field">model_name</span>
+          <span class="event-field">prompt</span>
+          <span class="event-field">response</span>
+          <span class="event-field">tokens_in</span>
+          <span class="event-field">tokens_out</span>
+          <span class="event-field">latency_ms</span>
+        </div>
+      </div>
+      <div class="event-card">
+        <div class="event-card-name"><span class="dot dot-green"></span>DOCUMENT_EVENTS</div>
+        <div class="event-card-desc">Logs document processing operations: uploads, parsing, chunking. Tracks source type, chunk count, and processing time.</div>
+        <div class="event-card-fields">
+          <span class="event-field">doc_type</span>
+          <span class="event-field">filename</span>
+          <span class="event-field">chunk_count</span>
+          <span class="event-field">collection</span>
+          <span class="event-field">process_ms</span>
+        </div>
+      </div>
+      <div class="event-card">
+        <div class="event-card-name"><span class="dot dot-amber"></span>INGEST_EVENTS</div>
+        <div class="event-card-desc">Detailed ingestion tracking per chunk. Records embedding generation, vector storage, and metadata association.</div>
+        <div class="event-card-fields">
+          <span class="event-field">chunk_id</span>
+          <span class="event-field">collection</span>
+          <span class="event-field">embed_ms</span>
+          <span class="event-field">store_ms</span>
+          <span class="event-field">metadata</span>
+        </div>
+      </div>
+      <div class="event-card">
+        <div class="event-card-name"><span class="dot dot-cyan"></span>QUERY_EVENTS</div>
+        <div class="event-card-desc">Captures user queries end-to-end. Stores the query text, retrieved context, reasoning strategy used, and final response.</div>
+        <div class="event-card-fields">
+          <span class="event-field">query_text</span>
+          <span class="event-field">strategy</span>
+          <span class="event-field">context_docs</span>
+          <span class="event-field">response</span>
+          <span class="event-field">total_ms</span>
+        </div>
+      </div>
+      <div class="event-card">
+        <div class="event-card-name"><span class="dot dot-red"></span>A2A_EVENTS</div>
+        <div class="event-card-desc">Agent-to-Agent protocol logging. Records JSON-RPC method calls, task IDs, agent identifiers, and message payloads.</div>
+        <div class="event-card-fields">
+          <span class="event-field">rpc_method</span>
+          <span class="event-field">task_id</span>
+          <span class="event-field">agent_id</span>
+          <span class="event-field">payload</span>
+          <span class="event-field">status</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 6. DEPLOYMENT MATRIX ═══════════ -->
+  <section id="s6" class="section fade-in">
+    <div class="section-header">
+      <span class="section-number">06</span>
+      <h2 class="section-title">Deployment Matrix</h2>
+      <span class="section-line"></span>
+    </div>
+    <div class="deploy-grid">
+      <div class="deploy-card">
+        <div class="deploy-card-title"><span class="dot dot-green"></span> Local</div>
+        <div class="deploy-card-desc">Direct Python execution. Fastest iteration cycle. Requires Oracle DB and Ollama running locally.</div>
+        <div class="terminal">
+          <span class="comment"># Default: Gradio UI on :7860</span><br>
+          <span class="prompt">$</span> python run_app.py<br><br>
+          <span class="comment"># Specific interface modes</span><br>
+          <span class="prompt">$</span> python run_app.py <span class="flag">--gradio</span><br>
+          <span class="prompt">$</span> python run_app.py <span class="flag">--openwebui</span><br>
+          <span class="prompt">$</span> python run_app.py <span class="flag">--api-only</span>
+        </div>
+      </div>
+      <div class="deploy-card">
+        <div class="deploy-card-title"><span class="dot dot-blue"></span> Docker</div>
+        <div class="deploy-card-desc">Containerized deployment with GPU passthrough. Uses host networking for Oracle DB and Ollama access.</div>
+        <div class="terminal">
+          <span class="comment"># Build with host network (pip)</span><br>
+          <span class="prompt">$</span> docker build <span class="flag">--network=host</span> \<br>
+          &nbsp;&nbsp;<span class="flag">-t</span> <span class="arg">agentic-rag</span> .<br><br>
+          <span class="comment"># Run with GPU support</span><br>
+          <span class="prompt">$</span> docker run <span class="flag">-d</span> <span class="flag">--gpus all</span> \<br>
+          &nbsp;&nbsp;<span class="flag">--network=host</span> <span class="arg">agentic-rag</span>
+        </div>
+      </div>
+      <div class="deploy-card">
+        <div class="deploy-card-title"><span class="dot dot-purple"></span> Kubernetes</div>
+        <div class="deploy-card-desc">Production-grade orchestration with HuggingFace token injection for gated model access.</div>
+        <div class="terminal">
+          <span class="comment"># Deploy full stack</span><br>
+          <span class="prompt">$</span> cd k8s<br>
+          <span class="prompt">$</span> ./deploy.sh<br><br>
+          <span class="comment"># With HF token for gated models</span><br>
+          <span class="prompt">$</span> ./deploy.sh \<br>
+          &nbsp;&nbsp;<span class="flag">--hf-token</span> <span class="arg">TOKEN</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 7. OPEN WEBUI INTEGRATION ═══════════ -->
+  <section id="s7" class="section fade-in">
+    <div class="section-header">
+      <span class="section-number">07</span>
+      <h2 class="section-title">Open WebUI Integration</h2>
+      <span class="section-line"></span>
+    </div>
+    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">Three custom Open WebUI functions bridge the chat interface with Oracle AI Database. Together they enable transparent RAG augmentation across every conversation.</p>
+    <div class="webui-grid">
+      <div class="webui-card">
+        <div class="webui-card-title">oracle_rag_filter.py</div>
+        <div class="webui-card-desc">Inlet/outlet filter that intercepts every message, queries Oracle DB for relevant context, and injects it into the prompt before it reaches the LLM.</div>
+        <div class="webui-card-feature">Transparent context injection</div>
+        <div class="webui-card-feature">Works with any model selection</div>
+        <div class="webui-card-feature">Inlet: augment prompt / Outlet: log response</div>
+      </div>
+      <div class="webui-card">
+        <div class="webui-card-title">oracle_rag_pipe.py</div>
+        <div class="webui-card-desc">Manifold pipe that creates 6 dedicated Oracle RAG model entries in the model selector. Each maps to a different reasoning strategy.</div>
+        <div class="webui-card-feature">6 virtual models in model picker</div>
+        <div class="webui-card-feature">Strategy-specific behavior per model</div>
+        <div class="webui-card-feature">Streaming response support</div>
+      </div>
+      <div class="webui-card">
+        <div class="webui-card-title">oracle_document_sync.py</div>
+        <div class="webui-card-desc">Manual sync action. Triggers bulk document synchronization from Open WebUI's knowledge base into Oracle Vector Store.</div>
+        <div class="webui-card-feature">On-demand sync trigger</div>
+        <div class="webui-card-feature">Deduplication by document hash</div>
+        <div class="webui-card-feature">Progress reporting via UI</div>
+      </div>
+    </div>
+    <div class="auto-persist-box">
+      <div class="auto-persist-title">Auto-Persistence Features</div>
+      <div class="auto-persist-desc">
+        <strong style="color: var(--text-primary);">Attached webpages</strong> are automatically chunked and stored in WEBCOLLECTION with full source metadata.<br>
+        <strong style="color: var(--text-primary);">Uploaded URLs</strong> are processed through WebProcessor (Trafilatura) and persisted to WEBCOLLECTION with title, URL, extraction date, and content hash.
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 8. NOTABLE CODE PATTERNS ═══════════ -->
+  <section id="s8" class="section fade-in">
+    <div class="section-header">
+      <span class="section-number">08</span>
+      <h2 class="section-title">Notable Code Patterns</h2>
+      <span class="section-line"></span>
+    </div>
+    <div class="patterns-grid">
+      <div class="pattern-card">
+        <div class="pattern-card-title"><span class="dot dot-amber"></span> Metadata Monkeypatch</div>
+        <div class="pattern-card-desc">Dual-format metadata handling for LangChain compatibility. Document metadata can arrive as either a Python dict or a JSON-encoded string depending on the source. The monkeypatch normalizes both formats transparently.</div>
+        <div class="code-snippet">
+<span class="cm"># Normalize metadata: dict or JSON string</span><br>
+<span class="kw">def</span> <span class="fn">_get_metadata</span>(doc):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;meta = doc.metadata<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> <span class="fn">isinstance</span>(meta, <span class="fn">str</span>):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">try</span>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;meta = json.<span class="fn">loads</span>(meta)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">except</span> json.JSONDecodeError:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;meta = {<span class="str">"raw"</span>: meta}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> meta
+        </div>
+      </div>
+      <div class="pattern-card">
+        <div class="pattern-card-title"><span class="dot dot-blue"></span> Vector Store Abstraction</div>
+        <div class="pattern-card-desc">ChromaDB and Oracle share the same interface contract. A factory function returns the appropriate implementation based on configuration, allowing seamless fallback without changing any query code.</div>
+        <div class="code-snippet">
+<span class="cm"># Unified vector store interface</span><br>
+<span class="kw">def</span> <span class="fn">get_vector_store</span>(config):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> config.use_oracle:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> <span class="fn">OracleVS</span>(<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;client=config.connection,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;embedding=config.embeddings,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;table_name=config.collection<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> <span class="fn">Chroma</span>(collection_name=config.collection)
+        </div>
+      </div>
+      <div class="pattern-card">
+        <div class="pattern-card-title"><span class="dot dot-green"></span> Agent Factory Pattern</div>
+        <div class="pattern-card-desc">Chain-of-Thought agent creation via factory. Each agent type (Planner, Researcher, Reasoner, Synthesizer) is instantiated with a role-specific system prompt and tool configuration, then composed into a pipeline.</div>
+        <div class="code-snippet">
+<span class="cm"># Factory creates role-specific agents</span><br>
+<span class="kw">class</span> <span class="fn">AgentFactory</span>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">def</span> <span class="fn">create</span>(self, role, llm, tools):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;prompt = self.prompts[role]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;agent = <span class="fn">create_react_agent</span>(<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;llm=llm,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tools=tools,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;prompt=prompt<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> <span class="fn">AgentExecutor</span>(agent=agent)
+        </div>
+      </div>
+      <div class="pattern-card">
+        <div class="pattern-card-title"><span class="dot dot-purple"></span> Similarity Score Normalization</div>
+        <div class="pattern-card-desc">Oracle Vector Search returns raw distance values. The normalization formula converts distance to a 0-1 similarity score where 1.0 means identical. This enables consistent threshold-based filtering across different distance metrics.</div>
+        <div class="code-snippet">
+<span class="cm"># Distance to similarity conversion</span><br>
+<span class="cm"># score = 1 / (1 + distance)</span><br>
+<span class="cm"># distance=0 -> score=1.0 (identical)</span><br>
+<span class="cm"># distance=inf -> score~0.0 (unrelated)</span><br><br>
+<span class="kw">def</span> <span class="fn">normalize_score</span>(distance):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> <span class="num">1.0</span> <span class="op">/</span> (<span class="num">1.0</span> <span class="op">+</span> distance)
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ FOOTER ═══════════ -->
+  <footer class="footer">
+    <p>
+      Agentic RAG <span class="sep"></span> Project Recap Dashboard <span class="sep"></span> oracle-ai-developer-hub <span class="sep"></span> 2026-02-27
+    </p>
+  </footer>
+
+</div>
+
+<script>
+// ── Mermaid Init ──────────────────────────────────────────────
+mermaid.initialize({
+  startOnLoad: true,
+  theme: 'dark',
+  themeVariables: {
+    darkMode: true,
+    background: '#0c0f1d',
+    primaryColor: '#1a2040',
+    primaryTextColor: '#c8d6e5',
+    primaryBorderColor: '#4fc3f7',
+    lineColor: '#4fc3f7',
+    secondaryColor: '#161b33',
+    tertiaryColor: '#111529',
+    fontFamily: 'Inter, sans-serif',
+    fontSize: '13px'
+  },
+  flowchart: {
+    htmlLabels: true,
+    curve: 'basis',
+    padding: 16,
+    nodeSpacing: 40,
+    rankSpacing: 50
+  }
+});
+
+// ── Counter Animation ─────────────────────────────────────────
+function animateCounters() {
+  const counters = document.querySelectorAll('.stat-value[data-target]');
+  counters.forEach(counter => {
+    const target = parseInt(counter.getAttribute('data-target'));
+    const duration = 1200;
+    const start = performance.now();
+
+    function update(now) {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      // Ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      counter.textContent = Math.round(eased * target);
+      if (progress < 1) {
+        requestAnimationFrame(update);
+      }
+    }
+    requestAnimationFrame(update);
+  });
+}
+
+// ── Scroll Fade-In ────────────────────────────────────────────
+function initScrollAnimations() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        // Trigger counters when stats row becomes visible
+        if (entry.target.classList.contains('stats-row')) {
+          animateCounters();
+        }
+      }
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+}
+
+// ── TOC Active Dot ────────────────────────────────────────────
+function initTocTracking() {
+  const sections = document.querySelectorAll('[id^="s"]');
+  const dots = document.querySelectorAll('.toc-dot');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        const index = parseInt(id.replace('s', '')) - 1;
+        dots.forEach((d, i) => {
+          d.classList.toggle('active', i === index);
+        });
+      }
+    });
+  }, { threshold: 0.3 });
+
+  sections.forEach(s => observer.observe(s));
+}
+
+// ── Init ──────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  initScrollAnimations();
+  initTocTracking();
+});
+</script>
+
+</body>
+</html>
