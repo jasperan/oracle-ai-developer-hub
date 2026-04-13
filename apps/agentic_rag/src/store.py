@@ -203,11 +203,10 @@ def main():
     parser.add_argument("--store-path", default="embeddings", help="Path to vector store")
     
     args = parser.parse_args()
-    args = parser.parse_args()
     
     # Try using Oracle DB Vector Store first
     try:
-        from .OraDBVectorStore import OraDBVectorStore
+        from OraDBVectorStore import OraDBVectorStore
         store = OraDBVectorStore()
         print("✓ Using Oracle DB Vector Store")
     except ImportError:

@@ -3,11 +3,22 @@ import json
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from src.OraDBVectorStore import OraDBVectorStore
 import time
-import sys
 import yaml
 from pathlib import Path
+
+import pytest
+
+try:
+    from src.OraDBVectorStore import OraDBVectorStore
+    _ORADB_IMPORT_OK = True
+except Exception:
+    _ORADB_IMPORT_OK = False
+
+pytestmark = pytest.mark.skipif(
+    not _ORADB_IMPORT_OK,
+    reason="OraDBVectorStore requires Oracle DB credentials",
+)
 
 def check_credentials():
     """Check if Oracle DB credentials are configured in config.yaml"""
@@ -107,8 +118,13 @@ def check_collection_stats(store):
         except Exception as e:
             print(f"Error checking {name}: {str(e)}")
 
-def test_add_and_query(store, query_text="machine learning"):
-    """Test adding simple data and querying it"""
+def test_add_and_query(oracle_vector_store):
+    """Pytest wrapper that uses the shared oracle_vector_store fixture."""
+    _add_and_query_check(oracle_vector_store)
+
+
+def _add_and_query_check(store, query_text="machine learning"):
+    """Test adding simple data and querying it."""
     if not store:
         print("Skipping add and query test as connection failed")
         return
@@ -231,7 +247,7 @@ ORACLE_DB_DSN: your_connection_string_here
     # If stats-only flag is not set, also test add and query functionality
     if not args.stats_only:
         # Test add and query functionality
-        test_add_and_query(store, args.query)
+        _add_and_query_check(store, args.query)
     
     print("\n=== Test Completed ===")
 

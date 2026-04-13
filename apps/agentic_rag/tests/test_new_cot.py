@@ -14,7 +14,7 @@ import yaml
 # Configure rich console
 console = Console()
 
-def test_multi_agent_cot(agent, query: str, description: str):
+def _run_multi_agent_cot(agent, query: str, description: str):
     """Test the multi-agent Chain of Thought system"""
     console.print(f"\n[bold cyan]Test Case: {description}")
     console.print(Panel(f"Query: {query}", style="yellow"))
@@ -99,7 +99,7 @@ def main():
         
         # Run test cases
         for test_case in test_cases:
-            test_multi_agent_cot(agent, test_case["query"], test_case["description"])
+            _run_multi_agent_cot(agent, test_case["query"], test_case["description"])
             console.print("\n" + "=" * 80)
     
     except Exception as e:

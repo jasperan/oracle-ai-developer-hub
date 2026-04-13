@@ -12,7 +12,7 @@ torch
 pyyaml
 trafilatura
 gradio>=6.7.0,<7.0
-open-webui
+# open-webui  # optional: requires Python >=3.11,<3.13
 lxml_html_clean
 langchain
 gitingest

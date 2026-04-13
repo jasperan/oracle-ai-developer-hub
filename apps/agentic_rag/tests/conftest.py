@@ -137,10 +137,23 @@ def _patch_load_config():
 
     original = _db_utils.load_config
     _db_utils.load_config = _oracle_config_from_env
+
+    # Also patch the local reference inside OraDBVectorStore, which does
+    # `from src.db_utils import load_config` (a copy, not a live binding).
+    _oravs_original = None
+    try:
+        from src import OraDBVectorStore as _oravs_mod
+        _oravs_original = getattr(_oravs_mod, "load_config", None)
+        _oravs_mod.load_config = _oracle_config_from_env
+    except Exception:
+        pass
+
     try:
         yield
     finally:
         _db_utils.load_config = original
+        if _oravs_original is not None:
+            _oravs_mod.load_config = _oravs_original
 
 
 # ---------------------------------------------------------------------------
@@ -174,7 +187,13 @@ def oracle_vector_store(oracle_available, oracle_config):
     except ImportError as e:
         pytest.skip(f"OraDBVectorStore import failed: {e}")
 
-    store = OraDBVectorStore(embedding_function=DeterministicEmbedding())
+    try:
+        store = OraDBVectorStore(embedding_function=DeterministicEmbedding())
+    except Exception as e:
+        pytest.skip(
+            f"OraDBVectorStore connection failed: {e}. "
+            "Check ORACLE_DB_USERNAME/PASSWORD/DSN env vars."
+        )
     yield store
     try:
         store.connection.close()

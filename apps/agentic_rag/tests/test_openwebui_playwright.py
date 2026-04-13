@@ -14,6 +14,7 @@ Prerequisites:
 
 Run with: pytest tests/test_openwebui_playwright.py -v --browser chromium
 """
+from __future__ import annotations
 
 import pytest
 import asyncio
@@ -28,6 +29,7 @@ try:
 except ImportError:
     PLAYWRIGHT_AVAILABLE = False
 
+pytestmark = pytest.mark.integration
 
 # Configuration
 OPENWEBUI_URL = "http://localhost:3000"

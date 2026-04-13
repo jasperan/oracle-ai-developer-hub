@@ -6,7 +6,7 @@ This test suite verifies that:
 2. Streaming responses are properly formatted
 3. Open WebUI can receive and display responses
 
-Run with: pytest tests/test_openwebui_streaming.py -v
+Run with: pytest tests/test_openwebui_streaming.py -v -m integration
 """
 
 import pytest
@@ -17,6 +17,7 @@ import asyncio
 from typing import Generator, List
 from concurrent.futures import ThreadPoolExecutor
 
+pytestmark = pytest.mark.integration
 
 # Backend configuration
 BACKEND_URL = "http://localhost:8000"

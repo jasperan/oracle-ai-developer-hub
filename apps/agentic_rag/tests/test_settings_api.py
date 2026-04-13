@@ -6,12 +6,14 @@ This test suite verifies that:
 2. Model switching updates the system
 3. Available models are listed
 
-Run with: pytest tests/test_settings_api.py -v
+Run with: pytest tests/test_settings_api.py -v -m integration
 """
 
 import pytest
 import requests
 import json
+
+pytestmark = pytest.mark.integration
 
 BACKEND_URL = "http://localhost:8000"
 TIMEOUT = 30
@@ -62,7 +64,7 @@ class TestSettingsAPI:
 
         # Update to a different model
         new_model = "gemma3:270m"
-        response = requests.post(
+        response = requests.put(
             f"{BACKEND_URL}/v1/settings/model",
             json={"model_name": new_model},
             timeout=TIMEOUT
@@ -81,7 +83,7 @@ class TestSettingsAPI:
         assert verify_response.json()["model_name"] == new_model
 
         # Restore original model
-        requests.post(
+        requests.put(
             f"{BACKEND_URL}/v1/settings/model",
             json={"model_name": current_model},
             timeout=TIMEOUT
@@ -90,7 +92,7 @@ class TestSettingsAPI:
     def test_test_model_endpoint(self):
         """Test the model testing endpoint."""
         response = requests.post(
-            f"{BACKEND_URL}/v1/settings/model/test",
+            f"{BACKEND_URL}/v1/settings/test-model",
             json={"model_name": "gemma3:270m"},
             timeout=60
         )
@@ -104,7 +106,7 @@ class TestSettingsAPI:
     def test_invalid_model_test(self):
         """Test model testing with invalid model."""
         response = requests.post(
-            f"{BACKEND_URL}/v1/settings/model/test",
+            f"{BACKEND_URL}/v1/settings/test-model",
             json={"model_name": "nonexistent-model-xyz"},
             timeout=30
         )
