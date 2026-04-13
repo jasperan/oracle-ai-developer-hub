@@ -19,6 +19,25 @@ BACKEND_URL = "http://localhost:8000"
 TIMEOUT = 30
 
 
+def _backend_reachable() -> bool:
+    """Quick probe: is the FastAPI backend listening?"""
+    try:
+        requests.get(f"{BACKEND_URL}/v1/health", timeout=3)
+        return True
+    except Exception:
+        return False
+
+
+@pytest.fixture(autouse=True)
+def _require_backend():
+    """Skip every test in this module when the backend isn't running."""
+    if not _backend_reachable():
+        pytest.skip(
+            f"Backend not reachable at {BACKEND_URL}. "
+            "Start it with `python run_app.py --api-only`."
+        )
+
+
 class TestSettingsAPI:
     """Test settings API endpoints."""
 

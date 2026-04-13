@@ -40,24 +40,41 @@ class PDFProcessor:
         self.tokenizer = tokenizer
         
         # Initialize Oracle connection and splitter
+        self.oracle_splitter_available = False
         try:
             self.connection = get_db_connection()
             # Split by default parameters: normalize="all"
             # Additional params can be added here as needed
             self.splitter_params = {"normalize": "all"}
             self.splitter = OracleTextSplitter(conn=self.connection, params=self.splitter_params)
+            self.oracle_splitter_available = True
             print("Successfully initialized OracleTextSplitter")
         except Exception as e:
-            print(f"Failed to initialize OracleTextSplitter: {e}")
-            raise
+            print(f"OracleTextSplitter unavailable ({e}), using basic text splitting")
+            self.connection = None
+            self.splitter = None
     
-    def _split_text_with_oracle(self, text: str) -> List[str]:
-        """Split text using OracleTextSplitter"""
-        try:
-            return self.splitter.split_text(text)
-        except Exception as e:
-            print(f"Warning: OracleTextSplitter failed: {str(e)}")
-            return []
+    def _split_text(self, text: str, chunk_size: int = 1000) -> List[str]:
+        """Split text using OracleTextSplitter when available, basic splitting otherwise."""
+        if self.oracle_splitter_available and self.splitter is not None:
+            try:
+                return self.splitter.split_text(text)
+            except Exception as e:
+                print(f"Warning: OracleTextSplitter failed ({e}), falling back to basic splitting")
+
+        # Basic fallback: split by paragraphs, then merge up to chunk_size
+        paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
+        chunks: List[str] = []
+        current = ""
+        for para in paragraphs:
+            if current and len(current) + len(para) + 2 > chunk_size:
+                chunks.append(current)
+                current = para
+            else:
+                current = f"{current}\n\n{para}" if current else para
+        if current:
+            chunks.append(current)
+        return chunks
 
     def process_pdf(self, file_path: str | Path) -> List[Dict[str, Any]]:
         """Process a PDF file and return chunks of text with metadata"""
@@ -74,10 +91,10 @@ class PDFProcessor:
             text_content = conv_result.document.export_to_markdown()
             
             # Split using OracleTextSplitter
-            chunks = self._split_text_with_oracle(text_content)
+            chunks = self._split_text(text_content)
             
             if not chunks:
-                raise ValueError("Failed to chunk document with OracleTextSplitter")
+                raise ValueError("Failed to chunk document (no text produced)")
             
             # Process chunks into a standardized format
             processed_chunks = []
@@ -116,10 +133,10 @@ class PDFProcessor:
             text_content = conv_result.document.export_to_markdown()
             
             # Split using OracleTextSplitter
-            chunks = self._split_text_with_oracle(text_content)
+            chunks = self._split_text(text_content)
             
             if not chunks:
-                raise ValueError("Failed to chunk document with OracleTextSplitter")
+                raise ValueError("Failed to chunk document (no text produced)")
             
             # Process chunks into a standardized format
             processed_chunks = []

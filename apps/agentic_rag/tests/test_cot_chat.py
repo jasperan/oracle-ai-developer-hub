@@ -58,7 +58,7 @@ def test_cot_chat():
             from src.OraDBVectorStore import OraDBVectorStore
             vector_store = OraDBVectorStore()
             logger.info("Using Oracle DB Vector Store")
-        except ImportError:
+        except Exception:
             vector_store = VectorStore()
             logger.info("Using ChromaDB Vector Store")
         
