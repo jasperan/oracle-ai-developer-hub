@@ -169,6 +169,8 @@ apps/agentic_rag/kubectl
 *.lock.hcl
 *.lock
 !workshops/soccer-analytics-agent/uv.lock
+# OraViz MCP ships its lockfile: the container build runs `uv sync --frozen`
+!apps/oraviz-mcp/uv.lock
 
 CLAUDE.md
 
