@@ -1,11 +1,12 @@
 {
-  "$schema": "https://modelcontextprotocol.io/schema/2025-10-17/server.json",
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
   "name": "io.github.jasperan/oraviz-mcp",
   "version": "0.1.0",
-  "description": "Minimal, visualization-first MCP server for Oracle AI Database: compact read-only queries, table profiling, and PNG chart rendering for AI assistants",
+  "description": "Visualization-first MCP server for Oracle AI Database: read-only queries, profiling, and PNG charts",
   "repository": {
-    "type": "git",
-    "url": "https://github.com/jasperan/oraviz-mcp.git"
+    "url": "https://github.com/jasperan/oraviz-mcp",
+    "source": "github",
+    "id": "1369768566"
   },
   "homepage": "https://github.com/jasperan/oraviz-mcp",
   "license": "MIT",

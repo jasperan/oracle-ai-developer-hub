@@ -111,5 +111,7 @@ next scripted step (`description`, `rows`, `one`, or `raise`), which lets a test
 
 ## Continuous Integration
 
-`.github/workflows/ci.yml` runs the unit suite with coverage on Python 3.12, builds the distribution,
-and builds the Docker image so the container path is exercised too.
+CI — `.github/workflows/ci.yml`, running the unit suite with coverage on Python 3.12, a distribution
+build, and a Docker image build so the container path is exercised too — lives in the standalone
+[oraviz-mcp](https://github.com/jasperan/oraviz-mcp) repository. This repository does not accept changes
+under `.github`, so in this copy run the commands above locally.
